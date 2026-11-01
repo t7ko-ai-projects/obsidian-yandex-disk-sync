@@ -2,9 +2,39 @@
 
 import { diffLines, splitLines } from "../snapshots/line-diff";
 
-export const MARKER_START = "<<<<<<< ";
-export const MARKER_MIDDLE = "=======";
-export const MARKER_END = ">>>>>>> ";
+/**
+ * Marker lines are Obsidian highlights, so they show up in every view and
+ * cannot be read as Markdown headings or quotes. Detection relies on the
+ * fixed keywords only; the text after the colon is a display label.
+ */
+const START = /^==CONFLICT START(?::.*)?==$/;
+const MIDDLE = /^==CONFLICT MIDDLE(?::.*)?==$/;
+const END = /^==CONFLICT END==$/;
+/** Git-style markers written by version 2.4.0, still recognised. */
+const LEGACY_START = /^<<<<<<< /;
+const LEGACY_MIDDLE = /^=======$/;
+const LEGACY_END = /^>>>>>>> /;
+
+export type MarkerKind = "start" | "middle" | "end";
+
+/** Classify a line as a marker line of the current or the legacy format. */
+export function parseMarkerLine(
+	line: string,
+): { kind: MarkerKind; legacy: boolean } | null {
+	for (const [kind, current, legacy] of [
+		["start", START, LEGACY_START],
+		["middle", MIDDLE, LEGACY_MIDDLE],
+		["end", END, LEGACY_END],
+	] as const) {
+		if (current.test(line)) {
+			return { kind, legacy: false };
+		}
+		if (legacy.test(line)) {
+			return { kind, legacy: true };
+		}
+	}
+	return null;
+}
 
 /** `<name>_conflict_<64 hex>[_<n>][.<ext>]`, as written by the conflict settlement. */
 const CONFLICT_COPY = /^(.+)_conflict_[0-9a-f]{64}(?:_\d+)?(\.[^./]+)?$/;
@@ -45,9 +75,9 @@ export function combineWithMarkers(
 		if (mine.length === 0 && theirs.length === 0) {
 			return;
 		}
-		out.push(`${MARKER_START}${labels.original}`, ...mine);
-		out.push(MARKER_MIDDLE, ...theirs);
-		out.push(`${MARKER_END}${labels.copy}`);
+		out.push(`==CONFLICT START: ${labels.original}==`, ...mine);
+		out.push(`==CONFLICT MIDDLE: ${labels.copy}==`, ...theirs);
+		out.push("==CONFLICT END==");
 		mine = [];
 		theirs = [];
 	};
@@ -68,19 +98,31 @@ export function combineWithMarkers(
 
 /** One-based line numbers where a complete marker block starts. */
 export function findMarkerBlocks(text: string): number[] {
-	if (!text.includes(MARKER_START)) {
+	if (!text.includes("CONFLICT START") && !text.includes("<<<<<<< ")) {
 		return [];
 	}
 	const starts: number[] = [];
 	let start = 0;
+	let legacy = false;
 	let middle = false;
 	splitLines(text).forEach((line, index) => {
-		if (line.startsWith(MARKER_START)) {
+		const marker = parseMarkerLine(line);
+		if (marker?.kind === "start") {
 			start = index + 1;
+			legacy = marker.legacy;
 			middle = false;
-		} else if (start > 0 && line === MARKER_MIDDLE) {
+		} else if (
+			start > 0 &&
+			marker?.kind === "middle" &&
+			marker.legacy === legacy
+		) {
 			middle = true;
-		} else if (start > 0 && middle && line.startsWith(MARKER_END)) {
+		} else if (
+			start > 0 &&
+			middle &&
+			marker?.kind === "end" &&
+			marker.legacy === legacy
+		) {
 			starts.push(start);
 			start = 0;
 			middle = false;

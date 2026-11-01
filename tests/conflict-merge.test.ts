@@ -3,10 +3,8 @@ import test from "node:test";
 import {
 	combineWithMarkers,
 	findMarkerBlocks,
-	MARKER_END,
-	MARKER_MIDDLE,
-	MARKER_START,
 	originalOfConflictCopy,
+	parseMarkerLine,
 } from "../src/conflicts/conflict-merge";
 import { splitLines } from "../src/snapshots/line-diff";
 
@@ -34,11 +32,12 @@ function pick(text: string, side: "original" | "copy"): string {
 	const out: string[] = [];
 	let part: "none" | "original" | "copy" = "none";
 	for (const line of splitLines(text)) {
-		if (line.startsWith(MARKER_START)) {
+		const kind = parseMarkerLine(line)?.kind;
+		if (kind === "start") {
 			part = "original";
-		} else if (part !== "none" && line === MARKER_MIDDLE) {
+		} else if (part !== "none" && kind === "middle") {
 			part = "copy";
-		} else if (part !== "none" && line.startsWith(MARKER_END)) {
+		} else if (part !== "none" && kind === "end") {
 			part = "none";
 		} else if (part === "none" || part === side) {
 			out.push(line);
@@ -57,17 +56,17 @@ test("combining writes one marker block per differing region", () => {
 		merged,
 		[
 			"a",
-			"<<<<<<< original",
+			"==CONFLICT START: original==",
 			"b",
-			"=======",
+			"==CONFLICT MIDDLE: copy==",
 			"B",
-			">>>>>>> copy",
+			"==CONFLICT END==",
 			"c",
 			"d",
-			"<<<<<<< original",
-			"=======",
+			"==CONFLICT START: original==",
+			"==CONFLICT MIDDLE: copy==",
 			"e",
-			">>>>>>> copy",
+			"==CONFLICT END==",
 			"",
 		].join("\n"),
 	);
@@ -98,17 +97,35 @@ test("choosing one side of every block restores that version exactly", () => {
 	}
 });
 
-test("only complete marker blocks are reported", () => {
+test("only complete marker blocks are reported, in both formats", () => {
+	const block = (start: string, middle: string, end: string) =>
+		[start, "x", middle, "y", end].join("\n") + "\n";
+	const current = block(
+		"==CONFLICT START: any label==",
+		"==CONFLICT MIDDLE: other==",
+		"==CONFLICT END==",
+	);
+	const legacy = block("<<<<<<< a", "=======", ">>>>>>> b");
 	assert.deepEqual(findMarkerBlocks("no markers here\n"), []);
-	assert.deepEqual(findMarkerBlocks("<<<<<<< a\nx\n=======\ny\n"), []);
+	assert.deepEqual(findMarkerBlocks(`t\n${current}`), [2]);
+	assert.deepEqual(findMarkerBlocks(`t\n${legacy}`), [2]);
+	assert.deepEqual(findMarkerBlocks(`${current}${legacy}`), [1, 6]);
+	// Incomplete, out of order or mixed-format blocks are not conflicts.
 	assert.deepEqual(
-		findMarkerBlocks("t\n<<<<<<< a\nx\n=======\ny\n>>>>>>> b\n"),
-		[2],
+		findMarkerBlocks(
+			"==CONFLICT START: a==\nx\n==CONFLICT MIDDLE: b==\ny\n",
+		),
+		[],
+	);
+	assert.deepEqual(
+		findMarkerBlocks("==CONFLICT END==\n==CONFLICT MIDDLE: b==\n"),
+		[],
 	);
 	assert.deepEqual(
 		findMarkerBlocks(
-			"=======\n>>>>>>> b\n<<<<<<< a\nx\n=======\ny\n>>>>>>> b\n",
+			block("==CONFLICT START: a==", "=======", "==CONFLICT END=="),
 		),
-		[3],
+		[],
 	);
+	assert.deepEqual(findMarkerBlocks("=======\n>>>>>>> b\n" + legacy), [3]);
 });

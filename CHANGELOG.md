@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.1
+
+### Changed
+
+- "Combine with markers" now writes highlighted marker lines
+  (`==CONFLICT START: ...==`, `==CONFLICT MIDDLE: ...==`, `==CONFLICT END==`)
+  instead of Git-style lines, which Markdown renders as headings and nested
+  quotes. Notes combined with 2.4.0 are still recognised.
+
 ## 2.4.0
 
 ### Added
