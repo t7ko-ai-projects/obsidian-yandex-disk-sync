@@ -25,6 +25,11 @@ export class SnapshotService {
 
 	/** Check shortly after startup, then periodically while Obsidian stays open. */
 	start(): void {
+		logger.info("Snapshot scheduler started", {
+			enabled: this.isEnabled(),
+			startupDelayMs: STARTUP_DELAY_MS,
+			intervalMs: CHECK_INTERVAL_MS,
+		});
 		const win =
 			this.app.workspace.containerEl.ownerDocument.defaultView ?? window;
 		win.setTimeout(() => void this.dailyCheck(), STARTUP_DELAY_MS);
@@ -40,6 +45,11 @@ export class SnapshotService {
 	/** Take today's snapshot if it is missing and report what changed. */
 	private async dailyCheck(): Promise<void> {
 		if (this.stopped || !this.isEnabled() || !Platform.isDesktop) {
+			logger.debug("Daily snapshot check skipped", {
+				stopped: this.stopped,
+				enabled: this.isEnabled(),
+				desktop: Platform.isDesktop,
+			});
 			return;
 		}
 		try {
@@ -54,6 +64,7 @@ export class SnapshotService {
 
 	/** Manual snapshot from the command palette or settings. */
 	async takeNow(): Promise<void> {
+		logger.info("Manual snapshot requested");
 		try {
 			await this.present(await this.manager.createNow());
 		} catch (error) {
@@ -93,6 +104,10 @@ export class SnapshotService {
 		if (!previous) {
 			return;
 		}
+		logger.debug("Showing snapshot summary", {
+			from: previous.id,
+			to: result.manifest.id,
+		});
 		if (!hasChanges(result.changes)) {
 			new Notice(t("snapshot.no_changes"));
 			return;

@@ -1,6 +1,6 @@
 {
-	"id": "yandex-disk-sync",
-	"name": "Yandex Disk Sync",
+	"id": "t7-yandex-disk-sync",
+	"name": "Yandex Disk Sync (t7)",
 	"version": "2.1.0",
 	"minAppVersion": "1.0.0",
 	"description": "Syncing files with Yandex Disk.",

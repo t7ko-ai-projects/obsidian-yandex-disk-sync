@@ -297,6 +297,12 @@ export class SnapshotChangesModal extends Modal {
 				}
 			}
 			await adapter.writeBinary(target, content);
+			logger.info("Snapshot file restored as copy", {
+				snapshot: this.base.id,
+				source: path,
+				target,
+				bytes: content.byteLength,
+			});
 			new Notice(t("snapshot.restored", { path: target }));
 		} catch (error) {
 			logger.error("Snapshot restore failed", { error });

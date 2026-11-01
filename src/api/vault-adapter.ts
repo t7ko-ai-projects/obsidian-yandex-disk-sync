@@ -477,7 +477,7 @@ export class VaultAdapter {
 			const safeName = originalPath.replace(/[\\/]+/g, "__");
 			const backupName = `${safeName}_${ts}_${crypto.randomUUID()}`;
 			const backupPath = obsidianNormalize(
-				`${configDir}/plugins/yandex-disk-sync/overwritten/${backupName}`,
+				`${configDir}/plugins/t7-yandex-disk-sync/overwritten/${backupName}`,
 			);
 			const backupDir = getDirectory(backupPath);
 			if (backupDir) {
@@ -525,7 +525,7 @@ export class VaultAdapter {
 		assertActive();
 		const configDir = this.app.vault.configDir;
 		const backupDir = obsidianNormalize(
-			`${configDir}/plugins/yandex-disk-sync/overwritten`,
+			`${configDir}/plugins/t7-yandex-disk-sync/overwritten`,
 		);
 		if (!(await this.vault.adapter.exists(backupDir))) {
 			return 0;

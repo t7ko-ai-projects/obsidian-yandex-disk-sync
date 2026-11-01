@@ -265,7 +265,7 @@ class MemoryAdapter implements SnapshotAdapter {
 
 /** The configuration folder is user-configurable; any name must work. */
 const CONFIG_DIR = ".config-folder";
-const PLUGIN = `${CONFIG_DIR}/plugins/yandex-disk-sync`;
+const PLUGIN = `${CONFIG_DIR}/plugins/t7-yandex-disk-sync`;
 
 function setup() {
 	const adapter = new MemoryAdapter();

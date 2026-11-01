@@ -18,6 +18,12 @@ import {
 /** Blobs younger than this survive garbage collection. */
 const GARBAGE_GRACE_MS = 60 * 60 * 1000;
 
+interface ScanStats {
+	reused: number;
+	hashed: number;
+	hashedBytes: number;
+}
+
 export interface SnapshotResult {
 	manifest: SnapshotManifest;
 	/** Newest earlier snapshot, the baseline of the daily summary. */
@@ -59,6 +65,10 @@ export class SnapshotManager {
 		const date = localDateKey(this.now());
 		const existing = await this.list();
 		if (existing.some((snapshot) => snapshot.date === date)) {
+			logger.debug("Daily snapshot exists, nothing to do", {
+				date,
+				snapshots: existing.length,
+			});
 			return null;
 		}
 		return await this.create(existing);
@@ -75,7 +85,13 @@ export class SnapshotManager {
 		return await this.exclusive(async () => {
 			const previous = existing[existing.length - 1] ?? null;
 			const time = this.now();
-			const files = await this.scan(previous, true);
+			const started = Date.now();
+			logger.info("Snapshot started", {
+				previous: previous?.id ?? null,
+				existing: existing.length,
+			});
+			const stats: ScanStats = { reused: 0, hashed: 0, hashedBytes: 0 };
+			const files = await this.scan(previous, true, stats);
 			const manifest: SnapshotManifest = {
 				format: "vault-snapshot",
 				id: `${localDateKey(time)}_${time.getTime()}`,
@@ -84,14 +100,23 @@ export class SnapshotManager {
 				files,
 			};
 			await this.store.writeManifest(manifest);
+			const changes = previous
+				? compareFileMaps(previous.files, manifest.files)
+				: null;
+			logger.info("Snapshot written", {
+				id: manifest.id,
+				files: Object.keys(files).length,
+				reusedHashes: stats.reused,
+				hashedFiles: stats.hashed,
+				hashedBytes: stats.hashedBytes,
+				added: changes?.added.length ?? null,
+				modified: changes?.modified.length ?? null,
+				deleted: changes?.deleted.length ?? null,
+				moved: changes?.moved.length ?? null,
+				durationMs: Date.now() - started,
+			});
 			await this.prune();
-			return {
-				manifest,
-				previous,
-				changes: previous
-					? compareFileMaps(previous.files, manifest.files)
-					: null,
-			};
+			return { manifest, previous, changes };
 		});
 	}
 
@@ -99,15 +124,30 @@ export class SnapshotManager {
 	private async prune(): Promise<void> {
 		const listing = await this.store.listManifests();
 		if (listing.unreadable.length > 0) {
+			logger.warn("Snapshot pruning skipped: unreadable manifests", {
+				unreadable: listing.unreadable,
+			});
 			return;
 		}
 		const keep = selectSnapshotsToKeep(listing.manifests);
+		logger.debug("Snapshot retention decision", {
+			keep: [...keep],
+			all: listing.manifests.map((manifest) => manifest.id),
+		});
 		for (const manifest of listing.manifests) {
 			if (!keep.has(manifest.id)) {
 				await this.store.deleteManifest(manifest.id);
+				logger.info("Old snapshot removed", { id: manifest.id });
 			}
 		}
-		await this.store.collectGarbage(GARBAGE_GRACE_MS, this.now().getTime());
+		const removed = await this.store.collectGarbage(
+			GARBAGE_GRACE_MS,
+			this.now().getTime(),
+		);
+		logger.info("Snapshot cleanup finished", {
+			kept: keep.size,
+			unusedBlobsRemoved: removed,
+		});
 	}
 
 	/** Changes between a snapshot and the vault as it is right now. */
@@ -115,7 +155,13 @@ export class SnapshotManager {
 		changes: SnapshotChanges;
 		current: FileMap;
 	}> {
-		const current = await this.scan(base, false);
+		const stats: ScanStats = { reused: 0, hashed: 0, hashedBytes: 0 };
+		const current = await this.scan(base, false, stats);
+		logger.debug("Compared snapshot with current vault", {
+			base: base.id,
+			reusedHashes: stats.reused,
+			hashedFiles: stats.hashed,
+		});
 		return { changes: compareFileMaps(base.files, current), current };
 	}
 
@@ -150,11 +196,15 @@ export class SnapshotManager {
 	private async scan(
 		previous: SnapshotManifest | null,
 		store: boolean,
+		stats: ScanStats,
 	): Promise<Record<string, SnapshotFileEntry>> {
 		const files: Record<string, SnapshotFileEntry> = {};
 		for (const path of await this.listVaultFiles()) {
 			const stat = await this.adapter.stat(path);
 			if (!stat) {
+				logger.debug("Snapshot scan: file vanished before stat", {
+					path,
+				});
 				continue;
 			}
 			const known = previous?.files[path];
@@ -165,10 +215,17 @@ export class SnapshotManager {
 				(!store || (await this.store.hasBlob(known.sha256)))
 			) {
 				files[path] = known;
+				stats.reused++;
 				continue;
 			}
 			const content = await this.adapter.readBinary(path);
 			const sha256 = await computeSha256(content);
+			stats.hashed++;
+			stats.hashedBytes += content.byteLength;
+			logger.debug("Snapshot scan: hashed file", {
+				path,
+				size: content.byteLength,
+			});
 			if (store) {
 				await this.store.putBlob(sha256, content);
 			}

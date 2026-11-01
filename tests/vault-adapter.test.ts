@@ -12,7 +12,7 @@ import { logger } from "../src/utils/logger";
 logger.configure({ consoleEnabled: false, fileEnabled: false });
 
 const TEST_CONFIG_DIR = ".config-hidden-test";
-const TEST_BACKUP_DIR = `${TEST_CONFIG_DIR}/plugins/yandex-disk-sync/overwritten`;
+const TEST_BACKUP_DIR = `${TEST_CONFIG_DIR}/plugins/t7-yandex-disk-sync/overwritten`;
 
 class FakeHiddenDataAdapter {
 	readonly files = new Map<string, ArrayBuffer>();
@@ -181,7 +181,9 @@ test("backup cleanup uses system trash and never local vault trash", async () =>
 	const dataAdapter = new FakeHiddenDataAdapter();
 	const backupDir = TEST_BACKUP_DIR;
 	dataAdapter.directories.add(`${TEST_CONFIG_DIR}/plugins`);
-	dataAdapter.directories.add(`${TEST_CONFIG_DIR}/plugins/yandex-disk-sync`);
+	dataAdapter.directories.add(
+		`${TEST_CONFIG_DIR}/plugins/t7-yandex-disk-sync`,
+	);
 	dataAdapter.directories.add(backupDir);
 	const oldPath = `${backupDir}/old`;
 	dataAdapter.seedFile(oldPath, new Uint8Array([1]).buffer);

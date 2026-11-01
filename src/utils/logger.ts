@@ -17,7 +17,8 @@ import { findErrorCause } from "./error-utils";
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LOG_PREFIX = "[YandexSync]";
-export const DEFAULT_LOG_RELATIVE_PATH = "plugins/yandex-disk-sync/debug.log";
+export const DEFAULT_LOG_RELATIVE_PATH =
+	"plugins/t7-yandex-disk-sync/debug.log";
 export const DEFAULT_MAX_LOG_SIZE = 5 * 1024 * 1024;
 const FLUSH_DELAY_MS = 100;
 

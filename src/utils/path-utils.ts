@@ -12,6 +12,7 @@ const PROTECTED_PATHS = [
 export const REMOTE_INDEX_LOCK_PREFIX = ".obsidian-sync-index.lock.";
 const PROTECTED_PATH_PREFIXES = [REMOTE_INDEX_LOCK_PREFIX];
 const PLUGIN_DIRECTORY_NAMES = new Set([
+	"t7-yandex-disk-sync",
 	"yandex-disk-sync",
 	"obsidian-yandex-disk-sync",
 ]);

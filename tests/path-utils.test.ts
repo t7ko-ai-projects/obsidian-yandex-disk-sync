@@ -62,6 +62,9 @@ test("stable migration recognizes protected plugin and service paths", () => {
 test("path filtering protects plugin storage while allowing other configured plugins", () => {
 	const configDir = ".custom-config";
 	for (const [relativePath, expected] of [
+		["plugins/t7-yandex-disk-sync/data.json", false],
+		["plugins/t7-yandex-disk-sync/debug.log", false],
+		["plugins/t7-yandex-disk-sync/snapshots/blobs/ab/abcd", false],
 		["plugins/yandex-disk-sync/data.json", false],
 		["plugins/yandex-disk-sync/debug.log", false],
 		["yandex-disk-sync/debug.log", false],
