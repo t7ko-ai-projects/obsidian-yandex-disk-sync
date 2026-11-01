@@ -78,6 +78,8 @@ import {
 import { createSyncFailure, formatOperationFailure } from "./sync/errors";
 import { FileWatcher } from "./sync/realtime/watcher";
 import { SnapshotService } from "./snapshots/snapshot-service";
+import { ConflictTracker } from "./conflicts/conflict-tracker";
+import { ConflictResolverModal } from "./ui/conflict-modal";
 import { SyncScheduler } from "./sync/scheduler";
 import {
 	MobileSyncRecovery,
@@ -135,6 +137,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 	private mobileRecovery: MobileSyncRecovery | null = null;
 	/** Daily vault snapshots; independent of the Yandex Disk connection. */
 	snapshots: SnapshotService | null = null;
+	private conflicts: ConflictTracker | null = null;
 	private lastFullFailure?: FailureSummary;
 	private backupManager!: BackupManager;
 	private syncIndicator: SyncIndicator | null = null;
@@ -260,6 +263,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 		// Register commands
 		this.registerCommands();
 		this.initializeSnapshots();
+		this.initializeConflicts();
 
 		// Create status disclosure and sidebar button
 		this.createSyncIndicator();
@@ -278,6 +282,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 	onunload(): void {
 		this.unloaded = true;
 		this.snapshots?.stop();
+		this.conflicts?.stop();
 		this.mobileRecovery?.dispose();
 		this.encryptionWorkflow?.admission.resetAutomaticPasswordRequests();
 		this.setSettingsStatusVisible(false);
@@ -721,10 +726,15 @@ export default class YandexDiskSyncPlugin extends Plugin {
 						sanitizeDiagnosticMessage(
 							await logger.getLogContents(),
 						),
+					openConflicts: () => this.openConflictResolver(),
 				},
 			),
 		);
 		this.syncIndicator = indicator;
+		const unsubscribe = this.conflicts?.onChange(() => indicator.update());
+		if (unsubscribe) {
+			this.register(unsubscribe);
+		}
 		this.register(
 			this.syncEngine.onStateChange((state) => {
 				if (state.status === "syncing") {
@@ -747,6 +757,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 			manualSyncRequired: this.settings.manualSyncRequired,
 			operationError: this.operationIssue?.message,
 			mobileRecovery: this.mobileRecovery?.getPresentation(),
+			conflicts: this.conflicts?.count() ?? 0,
 		};
 	}
 
@@ -785,6 +796,36 @@ export default class YandexDiskSyncPlugin extends Plugin {
 		);
 		button.addClass("yandex-sync-sidebar-button");
 		this.sidebarButton = button;
+	}
+
+	/** Track unresolved sync conflicts and add their commands. */
+	private initializeConflicts(): void {
+		this.conflicts = new ConflictTracker(this.app, this);
+		this.localizedCommands.push({
+			key: "command.resolve_conflicts",
+			command: this.addCommand({
+				id: "resolve-conflicts",
+				name: t("command.resolve_conflicts"),
+				callback: () => this.openConflictResolver(),
+			}),
+		});
+		this.localizedCommands.push({
+			key: "command.next_conflict_marker",
+			command: this.addCommand({
+				id: "next-conflict-marker",
+				name: t("command.next_conflict_marker"),
+				callback: () => {
+					void this.conflicts?.jumpToNext();
+				},
+			}),
+		});
+		this.app.workspace.onLayoutReady(() => this.conflicts?.start());
+	}
+
+	private openConflictResolver(): void {
+		if (this.conflicts) {
+			new ConflictResolverModal(this.app, this.conflicts).open();
+		}
 	}
 
 	/** Wire daily snapshots and their commands. */

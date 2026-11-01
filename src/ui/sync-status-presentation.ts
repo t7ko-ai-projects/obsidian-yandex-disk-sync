@@ -108,6 +108,8 @@ export interface SyncIndicatorContext {
 	manualSyncRequired?: boolean;
 	operationError?: string;
 	mobileRecovery?: MobileRecoveryPresentation;
+	/** Unresolved conflict copies and notes with conflict markers. */
+	conflicts?: number;
 }
 
 export interface SyncPresentation {

@@ -2,15 +2,14 @@
 
 import { App, Modal, Notice, Setting } from "obsidian";
 import { t } from "../i18n";
-import { diffLines, splitLines, toHunks } from "../snapshots/line-diff";
 import {
 	compareFileMaps,
-	decodeText,
 	type SnapshotChanges,
 } from "../snapshots/snapshot-diff";
 import type { SnapshotManager } from "../snapshots/snapshot-manager";
 import type { SnapshotManifest } from "../snapshots/snapshot-store";
 import { logger } from "../utils/logger";
+import { renderTextDiff } from "./diff-view";
 
 const MAX_ROWS = 1000;
 const CURRENT = "current";
@@ -228,39 +227,7 @@ export class SnapshotChangesModal extends Modal {
 			if (generation !== this.generation) {
 				return;
 			}
-			const textBefore = before ? decodeText(before) : "";
-			const textAfter = after ? decodeText(after) : "";
-			const ops =
-				textBefore === null || textAfter === null
-					? null
-					: diffLines(splitLines(textBefore), splitLines(textAfter));
-			if (textBefore === null || textAfter === null) {
-				output.setText(
-					t("snapshot.binary", {
-						before: String(before?.byteLength ?? 0),
-						after: String(after?.byteLength ?? 0),
-					}),
-				);
-				return;
-			}
-			if (ops === null) {
-				output.setText(t("snapshot.diff_too_large"));
-				return;
-			}
-			for (const hunk of toHunks(ops)) {
-				output.createDiv({
-					cls: "ydsync-diff-hunk",
-					text: `@@ -${hunk.oldStart} +${hunk.newStart} @@`,
-				});
-				for (const op of hunk.ops) {
-					const mark =
-						op.type === "add" ? "+" : op.type === "del" ? "-" : " ";
-					output.createDiv({
-						cls: `ydsync-diff-line ydsync-diff-${op.type}`,
-						text: `${mark} ${op.line}`,
-					});
-				}
-			}
+			renderTextDiff(output, before, after);
 		} catch (error) {
 			logger.error("Snapshot diff failed", { error });
 			output.setText(

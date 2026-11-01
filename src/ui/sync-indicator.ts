@@ -17,6 +17,7 @@ import { t } from "../i18n";
 interface SyncIndicatorActions {
 	synchronize: () => Promise<void>;
 	readLogs: () => Promise<string>;
+	openConflicts: () => void;
 }
 
 /** Shared collapsible status; native disclosure state belongs to this lifecycle only. */
@@ -25,6 +26,8 @@ export class SyncIndicator extends Component {
 	private summaryEl!: HTMLElement;
 	private loaderEl!: HTMLElement;
 	private syncButton!: HTMLButtonElement;
+	private conflictButton!: HTMLButtonElement;
+	private conflictBadgeEl!: HTMLElement;
 	private copyButton!: HTMLButtonElement;
 	private openLogsButton!: HTMLButtonElement;
 	private syncRequested = false;
@@ -74,6 +77,10 @@ export class SyncIndicator extends Component {
 			cls: "yandex-sync-status-icon",
 			attr: { "aria-hidden": "true" },
 		});
+		this.conflictBadgeEl = this.summaryEl.createSpan({
+			cls: "yandex-sync-indicator-conflicts",
+		});
+		this.conflictBadgeEl.hidden = true;
 		const actions = this.element.createDiv({
 			cls: "yandex-sync-indicator-actions",
 		});
@@ -87,6 +94,15 @@ export class SyncIndicator extends Component {
 		});
 		this.registerDomEvent(this.syncButton, "click", () => {
 			void this.synchronize();
+		});
+		this.conflictButton = actions.createEl("button", {
+			cls: "clickable-icon yandex-sync-indicator-action",
+			attr: { type: "button" },
+		});
+		setIcon(this.conflictButton, "git-merge");
+		this.conflictButton.hidden = true;
+		this.registerDomEvent(this.conflictButton, "click", () => {
+			this.actions.openConflicts();
 		});
 		this.copyButton = actions.createEl("button", {
 			cls: "clickable-icon yandex-sync-indicator-action",
@@ -213,6 +229,16 @@ export class SyncIndicator extends Component {
 			setTooltip(button, t(key), { placement: "top" });
 		}
 		const context = this.readContext();
+		const conflicts = context.conflicts ?? 0;
+		const conflictLabel = t("conflict.indicator", {
+			count: String(conflicts),
+		});
+		this.conflictButton.hidden = conflicts === 0;
+		this.conflictButton.setAttribute("aria-label", conflictLabel);
+		setTooltip(this.conflictButton, conflictLabel, { placement: "top" });
+		this.conflictBadgeEl.hidden = conflicts === 0;
+		this.conflictBadgeEl.setText(String(conflicts));
+		this.conflictBadgeEl.setAttribute("aria-label", conflictLabel);
 		const { fullSyncInProgress, syncUnavailable, connection } = context;
 		this.syncButton.disabled = syncUnavailable || this.syncRequested;
 		this.syncButton.setAttribute(

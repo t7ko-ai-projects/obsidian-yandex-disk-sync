@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.0
+
+### Added
+
+- A window for resolving sync conflicts: it lists conflict copies with a line
+  diff against the original and offers keep original, use the copy, combine
+  with markers (both versions written into the original between conflict
+  markers) and open both. The YD indicator shows the number of unresolved
+  conflicts and opens the window; a command jumps to the next conflict marker.
+
 ## 2.3.0
 
 ### Changed
