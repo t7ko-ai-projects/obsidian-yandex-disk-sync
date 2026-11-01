@@ -1,5 +1,25 @@
 # Changelog
 
+## 2.2.0
+
+Fork release (plugin id `t7-yandex-disk-sync`).
+
+### Added
+
+- Daily vault snapshots on desktop (off by default): 7 daily and 3 weekly
+  snapshots chosen by a retention rule that survives missed days, a summary of
+  changes since the previous snapshot, per-file line diffs and "Restore a copy".
+- Snapshot activity is logged at info and debug level.
+- Two-device data-safety tests (concurrent edits, delete versus edit, request
+  failures at every step, random interleavings).
+
+### Changed
+
+- The plugin id is `t7-yandex-disk-sync` and its name "Yandex Disk Sync (t7)",
+  so it can coexist with the upstream plugin. Its folder is never synchronized,
+  and the log and protective-backup paths follow the new id.
+- Release assets are published as GitHub releases for BRAT.
+
 ## 2.1.0
 
 Changes since `2.0.0`.
