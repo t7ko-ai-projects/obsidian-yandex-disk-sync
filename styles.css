@@ -786,6 +786,22 @@
 	width: min(900px, 94vw);
 }
 
+/* The list can be longer than the screen; the window scrolls, not the page behind it. */
+.ydsync-snapshot-modal .modal-content {
+	max-height: 80vh;
+	max-height: calc(100dvh - 9rem);
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* One scroll area on phones: a nested one swallows the swipe. */
+.is-mobile .ydsync-diff {
+	max-height: none;
+	overflow: visible;
+}
+
 .ydsync-snapshot-pickers {
 	display: flex;
 	flex-wrap: wrap;

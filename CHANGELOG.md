@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.2
+
+### Fixed
+
+- The sync conflicts and vault changes windows can be scrolled on phones.
+
 ## 2.4.1
 
 ### Changed
