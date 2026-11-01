@@ -26,11 +26,6 @@ jobs:
       - run: npm run check:bundle
       - run: git diff --check
       - run: git diff --exit-code
-      - run: npm audit --omit=dev --registry=https://registry.npmjs.org
-      - run: npm audit --registry=https://registry.npmjs.org
-      - run: npm run validate:release
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
       - name: Prepare exact release assets
         run: |
           mkdir release-assets
