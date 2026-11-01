@@ -73,6 +73,7 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 	private encryptionToggle: ToggleComponent | null = null;
 	private encryptionSpinner: HTMLElement | null = null;
 	private pendingAction = false;
+	private resettingEncryptionToggle = false;
 	private renderGeneration = 0;
 	private displayed = false;
 
@@ -150,6 +151,20 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 			disabled: component.disabled,
 		});
 		this.updateActivity();
+	}
+
+	/**
+	 * Put the toggle back in line with the saved setting. Some Obsidian versions
+	 * run the change handler for a programmatic setValue; that echo must not be
+	 * mistaken for a click, or it starts an action and blocks the real one.
+	 */
+	private resetEncryptionToggle(toggle: ToggleComponent): void {
+		this.resettingEncryptionToggle = true;
+		try {
+			toggle.setValue(this.plugin.settings.enableEncryption);
+		} finally {
+			this.resettingEncryptionToggle = false;
+		}
 	}
 
 	private isActionUnavailable(): boolean {
@@ -978,7 +993,10 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 					.setDisabled(migrationPending)
 					.then((control) => this.trackControl(control))
 					.onChange(async (value) => {
-						toggle.setValue(this.plugin.settings.enableEncryption);
+						if (this.resettingEncryptionToggle) {
+							return;
+						}
+						this.resetEncryptionToggle(toggle);
 						logger.info("Encryption toggle clicked", {
 							requested: value,
 							enabled: this.plugin.settings.enableEncryption,
@@ -1005,9 +1023,7 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 									await this.disableEncryptionFlow(isCurrent);
 								}
 							} finally {
-								toggle.setValue(
-									this.plugin.settings.enableEncryption,
-								);
+								this.resetEncryptionToggle(toggle);
 							}
 						});
 					});

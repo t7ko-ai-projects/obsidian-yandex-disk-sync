@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.2
+
+### Fixed
+
+- The encryption toggle could not be switched on in Obsidian versions where a
+  programmatic toggle reset runs the change handler: that echo started a
+  settings action and the real click was then refused as busy. Resets of the
+  toggle made by the plugin itself are now ignored.
+
 ## 2.2.1
 
 ### Fixed
