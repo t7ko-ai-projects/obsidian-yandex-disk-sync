@@ -1,7 +1,7 @@
 {
 	"id": "t7-yandex-disk-sync",
 	"name": "Yandex Disk Sync (t7)",
-	"version": "2.5.0",
+	"version": "2.5.1",
 	"minAppVersion": "1.11.4",
 	"description": "Syncing files with Yandex Disk.",
 	"author": "Ivansushkin",

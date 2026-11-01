@@ -868,3 +868,20 @@
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
 }
+
+/* Title on its own line, then the two decisions side by side and compact. */
+.ydsync-hunk-actions > span {
+	flex: 1 0 100%;
+}
+
+.ydsync-hunk-actions button {
+	flex: 1 1 0;
+	height: auto;
+	min-height: 32px;
+	padding: var(--size-4-1) var(--size-4-3);
+	font-size: var(--font-ui-small);
+}
+
+.is-mobile .ydsync-hunk-actions button {
+	min-height: 40px;
+}

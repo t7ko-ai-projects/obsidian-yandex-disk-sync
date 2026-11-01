@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.1
+
+### Fixed
+
+- The section buttons of the conflict window are compact and sit side by side
+  under the section title, and the explanatory text no longer uses the
+  monospace diff font.
+
 ## 2.5.0
 
 ### Added

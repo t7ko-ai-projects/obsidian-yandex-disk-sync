@@ -226,7 +226,9 @@ export class ConflictResolverModal extends Modal {
 			});
 		});
 		update();
-		output.createEl("p", { text: t("conflict.hunk_hint") });
+		output.before(
+			contentEl.createEl("p", { text: t("conflict.hunk_hint") }),
+		);
 		renderHunks(output, segmented, choices, update);
 	}
 
