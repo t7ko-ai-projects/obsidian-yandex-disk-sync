@@ -72,6 +72,7 @@ import {
 } from "./sync/engine";
 import { createSyncFailure, formatOperationFailure } from "./sync/errors";
 import { FileWatcher } from "./sync/realtime/watcher";
+import { SnapshotService } from "./snapshots/snapshot-service";
 import { SyncScheduler } from "./sync/scheduler";
 import {
 	MobileSyncRecovery,
@@ -127,6 +128,8 @@ export default class YandexDiskSyncPlugin extends Plugin {
 	private fileWatcher!: FileWatcher;
 	private syncScheduler!: SyncScheduler;
 	private mobileRecovery: MobileSyncRecovery | null = null;
+	/** Daily vault snapshots; independent of the Yandex Disk connection. */
+	snapshots: SnapshotService | null = null;
 	private lastFullFailure?: FailureSummary;
 	private backupManager!: BackupManager;
 	private syncIndicator: SyncIndicator | null = null;
@@ -250,6 +253,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 
 		// Register commands
 		this.registerCommands();
+		this.initializeSnapshots();
 
 		// Create status disclosure and sidebar button
 		this.createSyncIndicator();
@@ -267,6 +271,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 
 	onunload(): void {
 		this.unloaded = true;
+		this.snapshots?.stop();
 		this.mobileRecovery?.dispose();
 		this.encryptionWorkflow?.admission.resetAutomaticPasswordRequests();
 		this.setSettingsStatusVisible(false);
@@ -774,6 +779,50 @@ export default class YandexDiskSyncPlugin extends Plugin {
 		);
 		button.addClass("yandex-sync-sidebar-button");
 		this.sidebarButton = button;
+	}
+
+	/** Wire daily snapshots and their commands. */
+	private initializeSnapshots(): void {
+		this.snapshots = new SnapshotService(
+			this.app,
+			this.manifest.dir ??
+				`${this.app.vault.configDir}/plugins/${this.manifest.id}`,
+			() => this.settings.enableDailySnapshots,
+			(id) => this.registerInterval(id),
+		);
+		this.localizedCommands.push({
+			key: "command.snapshot_now",
+			command: this.addCommand({
+				id: "snapshot-now",
+				name: t("command.snapshot_now"),
+				checkCallback: (checking) => {
+					if (!Platform.isDesktop) {
+						return false;
+					}
+					if (!checking) {
+						void this.snapshots?.takeNow();
+					}
+					return true;
+				},
+			}),
+		});
+		this.localizedCommands.push({
+			key: "command.snapshot_changes",
+			command: this.addCommand({
+				id: "snapshot-changes",
+				name: t("command.snapshot_changes"),
+				checkCallback: (checking) => {
+					if (!Platform.isDesktop) {
+						return false;
+					}
+					if (!checking) {
+						void this.snapshots?.showChanges();
+					}
+					return true;
+				},
+			}),
+		});
+		this.app.workspace.onLayoutReady(() => this.snapshots?.start());
 	}
 
 	/**

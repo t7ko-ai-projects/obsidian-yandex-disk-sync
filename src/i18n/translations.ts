@@ -246,6 +246,42 @@ export const translations: Record<Language, Record<string, string>> = {
 		"command.sync_now": "Sync with Yandex Disk now",
 		"command.toggle_sync": "Pause/Resume synchronization",
 		"command.show_status": "Show synchronization status",
+		"command.snapshot_now": "Take vault snapshot now",
+		"command.snapshot_changes": "Show changes since the last snapshot",
+		"settings.snapshots_section": "Daily snapshots",
+		"settings.snapshots_desc":
+			"Keep a local copy of the whole vault every day: the last 7 days plus 3 older weekly snapshots. Snapshots stay on this computer in the plugin folder and are never synchronized.",
+		"settings.snapshots_toggle": "Daily snapshots",
+		"settings.snapshots_toggle_desc":
+			"Take a snapshot on the first start each day and show what changed since the previous one. Desktop only.",
+		"settings.snapshots_desktop_only":
+			"Daily snapshots are available on desktop only.",
+		"settings.snapshots_now_button": "Take snapshot now",
+		"settings.snapshots_changes_name": "Changes since the last snapshot",
+		"settings.snapshots_changes_button": "Show changes",
+		"snapshot.title": "Vault changes",
+		"snapshot.from": "Changes since",
+		"snapshot.to": "up to",
+		"snapshot.current": "current vault",
+		"snapshot.summary":
+			"{added} added, {modified} modified, {deleted} deleted, {moved} moved",
+		"snapshot.no_changes": "No changes.",
+		"snapshot.group_added": "Added",
+		"snapshot.group_modified": "Modified",
+		"snapshot.group_deleted": "Deleted",
+		"snapshot.group_moved": "Moved",
+		"snapshot.back": "Back to the list",
+		"snapshot.binary":
+			"Binary or large file: {before} bytes before, {after} bytes after.",
+		"snapshot.diff_too_large":
+			"The file is too large or too different to show a line diff.",
+		"snapshot.restore_copy": "Restore a copy",
+		"snapshot.restored": "Saved as {path}",
+		"snapshot.restore_exists": "A file named {path} already exists.",
+		"snapshot.created_first": "First vault snapshot created.",
+		"snapshot.none": "There are no snapshots yet.",
+		"snapshot.failed": "Vault snapshot failed: {message}",
+		"snapshot.list_truncated": "Showing the first {count} files only.",
 
 		// Status bar
 		"status.syncing": "Syncing...",
@@ -831,6 +867,42 @@ export const translations: Record<Language, Record<string, string>> = {
 		"command.sync_now": "Синхронизировать с Яндекс Диском сейчас",
 		"command.toggle_sync": "Приостановить/возобновить синхронизацию",
 		"command.show_status": "Показать статус синхронизации",
+		"command.snapshot_now": "Сделать снимок хранилища сейчас",
+		"command.snapshot_changes": "Показать изменения с последнего снимка",
+		"settings.snapshots_section": "Ежедневные снимки",
+		"settings.snapshots_desc":
+			"Каждый день сохраняется локальная копия всего хранилища: последние 7 дней и 3 более старых недельных снимка. Снимки лежат на этом компьютере в папке плагина и не синхронизируются.",
+		"settings.snapshots_toggle": "Ежедневные снимки",
+		"settings.snapshots_toggle_desc":
+			"При первом запуске за день делать снимок и показывать, что изменилось с предыдущего. Только для компьютера.",
+		"settings.snapshots_desktop_only":
+			"Ежедневные снимки доступны только на компьютере.",
+		"settings.snapshots_now_button": "Сделать снимок сейчас",
+		"settings.snapshots_changes_name": "Изменения с последнего снимка",
+		"settings.snapshots_changes_button": "Показать изменения",
+		"snapshot.title": "Изменения в хранилище",
+		"snapshot.from": "Изменения с",
+		"snapshot.to": "по",
+		"snapshot.current": "текущее хранилище",
+		"snapshot.summary":
+			"добавлено: {added}, изменено: {modified}, удалено: {deleted}, перемещено: {moved}",
+		"snapshot.no_changes": "Изменений нет.",
+		"snapshot.group_added": "Добавлены",
+		"snapshot.group_modified": "Изменены",
+		"snapshot.group_deleted": "Удалены",
+		"snapshot.group_moved": "Перемещены",
+		"snapshot.back": "Назад к списку",
+		"snapshot.binary":
+			"Двоичный или большой файл: было {before} байт, стало {after} байт.",
+		"snapshot.diff_too_large":
+			"Файл слишком большой или слишком сильно изменён для построчного сравнения.",
+		"snapshot.restore_copy": "Восстановить копию",
+		"snapshot.restored": "Сохранено как {path}",
+		"snapshot.restore_exists": "Файл {path} уже существует.",
+		"snapshot.created_first": "Создан первый снимок хранилища.",
+		"snapshot.none": "Снимков пока нет.",
+		"snapshot.failed": "Не удалось создать снимок хранилища: {message}",
+		"snapshot.list_truncated": "Показаны только первые {count} файлов.",
 
 		// Status bar
 		"status.syncing": "Синхронизация...",

@@ -42,6 +42,8 @@ export interface YandexDiskSyncSettings {
 	enableDebugLogging: boolean;
 	/** Write logs to a file in the vault for debugging */
 	logToFile: boolean;
+	/** Keep daily local snapshots of the whole vault (desktop only) */
+	enableDailySnapshots: boolean;
 	/** Enable end-to-end encryption */
 	enableEncryption: boolean;
 	/** Base64-encoded salt for key derivation (null = not initialized) */
@@ -74,6 +76,7 @@ export const DEFAULT_SETTINGS: YandexDiskSyncSettings = {
 	maxConcurrency: 20,
 	enableDebugLogging: false,
 	logToFile: true,
+	enableDailySnapshots: false,
 	enableEncryption: false,
 	encryptionSalt: null,
 	encryptionPassword: null,

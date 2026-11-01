@@ -19,6 +19,7 @@ const USER_SETTING_KEYS = [
 	"maxConcurrency",
 	"enableDebugLogging",
 	"logToFile",
+	"enableDailySnapshots",
 ] as const;
 
 export type UserSettingsPatch = Partial<
@@ -98,7 +99,10 @@ export function prepareSettingsPatch(
 		},
 		hasChanges: changed.length > 0,
 		requiresIdle: changed.some(
-			(key) => key !== "enableDebugLogging" && key !== "logToFile",
+			(key) =>
+				key !== "enableDebugLogging" &&
+				key !== "logToFile" &&
+				key !== "enableDailySnapshots",
 		),
 		changesConnection,
 		changesFileScope,

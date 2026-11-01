@@ -8,6 +8,7 @@ import {
 	type BaseComponent,
 	ButtonComponent,
 	Notice,
+	Platform,
 	PluginSettingTab,
 	Setting,
 	TextAreaComponent,
@@ -1142,6 +1143,52 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 			);
 
 		this.renderLogActions(loggingEl, generation);
+
+		// Daily snapshots section
+		new Setting(containerEl)
+			.setName(t("settings.snapshots_section"))
+			.setDesc(t("settings.snapshots_desc"))
+			.setHeading();
+		if (Platform.isDesktop) {
+			new Setting(containerEl)
+				.setName(t("settings.snapshots_toggle"))
+				.setDesc(t("settings.snapshots_toggle_desc"))
+				.addToggle((toggle) =>
+					toggle
+						.setValue(this.plugin.settings.enableDailySnapshots)
+						.setDisabled(migrationPending)
+						.then((control) => this.trackControl(control, true))
+						.onChange(async (value) => {
+							if (this.plugin.isPluginUnloaded()) {
+								return;
+							}
+							await this.applyDraft({
+								enableDailySnapshots: value,
+							});
+						}),
+				);
+			new Setting(containerEl)
+				.setName(t("settings.snapshots_changes_name"))
+				.addButton((button) =>
+					button
+						.setButtonText(t("settings.snapshots_now_button"))
+						.onClick(() => {
+							void this.plugin.snapshots?.takeNow();
+						}),
+				)
+				.addButton((button) =>
+					button
+						.setButtonText(t("settings.snapshots_changes_button"))
+						.onClick(() => {
+							void this.plugin.snapshots?.showChanges();
+						}),
+				);
+		} else {
+			containerEl.createEl("p", {
+				text: t("settings.snapshots_desktop_only"),
+				cls: "setting-item-description",
+			});
+		}
 
 		// Backup section
 		new Setting(containerEl)

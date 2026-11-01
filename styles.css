@@ -781,3 +781,46 @@
 		animation: none;
 	}
 }
+
+.ydsync-snapshot-modal {
+	width: min(900px, 94vw);
+}
+
+.ydsync-snapshot-pickers {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	align-items: center;
+	margin-bottom: var(--size-4-2);
+}
+
+.ydsync-snapshot-list {
+	margin: 0 0 var(--size-4-2);
+	padding-left: var(--size-4-4);
+}
+
+.ydsync-snapshot-list a {
+	cursor: pointer;
+}
+
+.ydsync-diff {
+	font-family: var(--font-monospace);
+	font-size: var(--font-smallest);
+	max-height: 60vh;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.ydsync-diff-hunk {
+	color: var(--text-muted);
+	margin-top: var(--size-4-2);
+}
+
+.ydsync-diff-add {
+	background-color: rgba(var(--color-green-rgb), 0.2);
+}
+
+.ydsync-diff-del {
+	background-color: rgba(var(--color-red-rgb), 0.2);
+}
