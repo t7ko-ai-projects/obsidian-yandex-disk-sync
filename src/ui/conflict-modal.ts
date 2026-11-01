@@ -1,8 +1,17 @@
 /** List sync conflicts and resolve each one against its original note. */
 
-import { App, Modal, Notice, Setting, TFile } from "obsidian";
+import { App, ButtonComponent, Modal, Notice, Setting, TFile } from "obsidian";
 import { t } from "../i18n";
-import { combineWithMarkers } from "../conflicts/conflict-merge";
+import {
+	applyHunkChoices,
+	segmentChanges,
+	type HunkChoice,
+	type Segmented,
+} from "../conflicts/conflict-hunks";
+import {
+	combineWithMarkers,
+	findMarkerBlocks,
+} from "../conflicts/conflict-merge";
 import type {
 	ConflictCopy,
 	ConflictTracker,
@@ -11,8 +20,15 @@ import { decodeText } from "../snapshots/snapshot-diff";
 import { computeSha256 } from "../utils/hash-utils";
 import { logger } from "../utils/logger";
 import { renderTextDiff } from "./diff-view";
+import { renderHunks } from "./hunk-view";
 
-type Action = "keep" | "use-copy" | "combine" | "restore" | "delete-copy";
+type Action =
+	| "keep"
+	| "use-copy"
+	| "combine"
+	| "apply-choices"
+	| "restore"
+	| "delete-copy";
 
 export class ConflictResolverModal extends Modal {
 	private generation = 0;
@@ -177,11 +193,41 @@ export class ConflictResolverModal extends Modal {
 			contentEl.createEl("p", { text: t("conflict.binary_note") });
 		}
 		contentEl.createEl("p", { text: t("conflict.hint") });
-		renderTextDiff(
-			contentEl.createDiv({ cls: "ydsync-diff" }),
-			originalBytes,
-			copyBytes,
-		);
+		const output = contentEl.createDiv({ cls: "ydsync-diff" });
+		const originalText = originalBytes ? decodeText(originalBytes) : null;
+		const copyText = decodeText(copyBytes);
+		if (!textual || originalText === null || copyText === null) {
+			renderTextDiff(output, originalBytes, copyBytes);
+			return;
+		}
+		const segmented = segmentChanges(originalText, copyText);
+		if (!segmented.segments.some((segment) => segment.kind === "change")) {
+			output.setText(t("snapshot.no_changes"));
+			return;
+		}
+		const choices = new Map<number, HunkChoice>();
+		let applyButton: ButtonComponent | null = null;
+		const update = () => {
+			applyButton
+				?.setButtonText(
+					t("conflict.apply_choices", {
+						count: String(choices.size),
+					}),
+				)
+				.setDisabled(choices.size === 0);
+		};
+		actions.addButton((button) => {
+			applyButton = button;
+			button.setCta().onClick(() => {
+				void this.apply(entry, loaded, "apply-choices", {
+					segmented,
+					choices,
+				});
+			});
+		});
+		update();
+		output.createEl("p", { text: t("conflict.hunk_hint") });
+		renderHunks(output, segmented, choices, update);
 	}
 
 	private async openBoth(entry: ConflictCopy): Promise<void> {
@@ -200,7 +246,9 @@ export class ConflictResolverModal extends Modal {
 		entry: ConflictCopy,
 		loaded: { copy: string; original: string | null },
 		action: Action,
+		resolution?: { segmented: Segmented; choices: Map<number, HunkChoice> },
 	): Promise<void> {
+		let markersLeft = action === "combine";
 		try {
 			const copyFile = this.file(entry.copy);
 			const originalFile = this.file(entry.original);
@@ -242,6 +290,21 @@ export class ConflictResolverModal extends Modal {
 						},
 					);
 					await vault.modify(originalFile, merged);
+				} else if (
+					action === "apply-choices" &&
+					originalFile &&
+					resolution
+				) {
+					const merged = applyHunkChoices(
+						resolution.segmented,
+						resolution.choices,
+						{
+							original: t("conflict.label_original"),
+							copy: t("conflict.label_copy"),
+						},
+					);
+					markersLeft = findMarkerBlocks(merged).length > 0;
+					await vault.modify(originalFile, merged);
 				}
 				await this.app.fileManager.trashFile(copyFile);
 			}
@@ -251,7 +314,7 @@ export class ConflictResolverModal extends Modal {
 			});
 			new Notice(t("conflict.done", { path: entry.original }));
 			await this.tracker.refresh();
-			if (action === "combine") {
+			if (markersLeft) {
 				this.close();
 				const marked = this.tracker
 					.markedNotes()

@@ -252,6 +252,12 @@ export const translations: Record<Language, Record<string, string>> = {
 		"conflict.copies_heading": "Conflict copies ({count})",
 		"conflict.markers_heading": "Notes with unresolved markers ({count})",
 		"conflict.none": "No sync conflicts found.",
+		"conflict.take_change": "Take the change",
+		"conflict.reject_change": "Reject the change",
+		"conflict.apply_choices": "Apply choices ({count})",
+		"conflict.hunk_title": "Change {number} of {total}",
+		"conflict.hunk_hint":
+			"For each change: take it to use the conflict copy's lines, or reject it to keep the original's. Changes you leave undecided stay in the note between conflict markers.",
 		"conflict.failed": "Conflict resolution failed: {message}",
 		"conflict.hint":
 			"Lines marked - exist only in the original, lines marked + only in the conflict copy.",
@@ -900,6 +906,12 @@ export const translations: Record<Language, Record<string, string>> = {
 		"conflict.markers_heading":
 			"Заметки с неразобранными маркерами ({count})",
 		"conflict.none": "Конфликтов синхронизации не найдено.",
+		"conflict.take_change": "Принять изменение",
+		"conflict.reject_change": "Отклонить изменение",
+		"conflict.apply_choices": "Применить выбор ({count})",
+		"conflict.hunk_title": "Изменение {number} из {total}",
+		"conflict.hunk_hint":
+			"Для каждого изменения: примите его, чтобы взять строки из копии конфликта, или отклоните, чтобы оставить строки оригинала. Изменения без решения остаются в заметке между маркерами конфликта.",
 		"conflict.failed": "Не удалось разобрать конфликт: {message}",
 		"conflict.hint":
 			"Строки с - есть только в оригинале, строки с + только в копии конфликта.",

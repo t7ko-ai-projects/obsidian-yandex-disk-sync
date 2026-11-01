@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.5.0
+
+### Added
+
+- Resolve a conflict section by section: the diff is split into sections (changes
+  within three unchanged lines of each other form one), each with "Take the
+  change" and "Reject the change". "Apply choices" writes the result into the
+  original and removes the conflict copy; sections left undecided stay in the
+  note between conflict markers.
+
 ## 2.4.2
 
 ### Fixed

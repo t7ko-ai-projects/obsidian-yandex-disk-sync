@@ -458,5 +458,10 @@
 	"conflict.indicator": "Hal qilinmagan sinxronlash ziddiyatlari: {count}",
 	"conflict.binary_note": "Bu matn fayli emas, uni birlashtirib bo‘lmaydi.",
 	"conflict.original_missing": "Asl fayl endi mavjud emas.",
-	"conflict.failed": "Ziddiyatni hal qilib bo‘lmadi: {message}"
+	"conflict.failed": "Ziddiyatni hal qilib bo‘lmadi: {message}",
+	"conflict.take_change": "O‘zgarishni qabul qilish",
+	"conflict.reject_change": "O‘zgarishni rad etish",
+	"conflict.apply_choices": "Tanlovni qo‘llash ({count})",
+	"conflict.hunk_title": "{total} ta o‘zgarishdan {number}-si",
+	"conflict.hunk_hint": "Har bir o‘zgarish uchun: ziddiyat nusxasidagi satrlarni olish uchun qabul qiling yoki asl nusxadagi satrlarni qoldirish uchun rad eting. Hal qilinmagan o‘zgarishlar yozuvda ziddiyat belgilari orasida qoladi."
 }

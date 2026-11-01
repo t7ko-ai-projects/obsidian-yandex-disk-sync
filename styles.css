@@ -851,3 +851,20 @@
 	font-weight: var(--font-semibold);
 	text-align: center;
 }
+
+.ydsync-hunk {
+	margin: var(--size-4-3) 0;
+	padding-left: var(--size-4-2);
+	border-left: 3px solid var(--background-modifier-border);
+}
+
+.ydsync-hunk-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	align-items: center;
+	margin-bottom: var(--size-4-1);
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+}

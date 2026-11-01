@@ -1,6 +1,6 @@
 /** Conflict copy naming and two-way "combine with markers" merging. */
 
-import { diffLines, splitLines } from "../snapshots/line-diff";
+import { diffLines, splitLines, type DiffOp } from "../snapshots/line-diff";
 
 /**
  * Marker lines are Obsidian highlights, so they show up in every view and
@@ -47,27 +47,26 @@ export function originalOfConflictCopy(path: string): string | null {
 	return match ? `${directory}${match[1]}${match[2] ?? ""}` : null;
 }
 
-/**
- * Merge two versions of a text without a common ancestor. Identical lines are
- * kept once; each region where the versions differ is written as a marker
- * block holding the original's lines, then the copy's lines. Keeping only the
- * first halves of all blocks gives back the original, only the second halves
- * the copy.
- */
-export function combineWithMarkers(
-	original: string,
-	copy: string,
-	labels: { original: string; copy: string },
-): string {
-	if (original === copy) {
-		return original;
-	}
+/** Line edit script from the original to the copy; one big change when too large to diff. */
+export function diffOps(original: string, copy: string): DiffOp[] {
 	const before = splitLines(original);
 	const after = splitLines(copy);
-	const ops = diffLines(before, after) ?? [
-		...before.map((line) => ({ type: "del" as const, line })),
-		...after.map((line) => ({ type: "add" as const, line })),
-	];
+	return (
+		diffLines(before, after) ?? [
+			...before.map((line) => ({ type: "del" as const, line })),
+			...after.map((line) => ({ type: "add" as const, line })),
+		]
+	);
+}
+
+/**
+ * Lines for an edit script where every region that differs becomes a marker
+ * block (original lines, then copy lines) and equal lines stay once.
+ */
+export function markersForOps(
+	ops: readonly DiffOp[],
+	labels: { original: string; copy: string },
+): string[] {
 	const out: string[] = [];
 	let mine: string[] = [];
 	let theirs: string[] = [];
@@ -92,6 +91,25 @@ export function combineWithMarkers(
 		}
 	}
 	flush();
+	return out;
+}
+
+/**
+ * Merge two versions of a text without a common ancestor. Identical lines are
+ * kept once; each region where the versions differ is written as a marker
+ * block holding the original's lines, then the copy's lines. Keeping only the
+ * first halves of all blocks gives back the original, only the second halves
+ * the copy.
+ */
+export function combineWithMarkers(
+	original: string,
+	copy: string,
+	labels: { original: string; copy: string },
+): string {
+	if (original === copy) {
+		return original;
+	}
+	const out = markersForOps(diffOps(original, copy), labels);
 	const newline = original.endsWith("\n") || copy.endsWith("\n");
 	return out.join("\n") + (newline ? "\n" : "");
 }

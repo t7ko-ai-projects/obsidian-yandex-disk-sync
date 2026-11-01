@@ -458,5 +458,10 @@
 	"conflict.indicator": "Неразабраных канфліктаў сінхранізацыі: {count}",
 	"conflict.binary_note": "Гэта не тэкставы файл, аб'яднаць яго нельга.",
 	"conflict.original_missing": "Арыгінальнага файла больш няма.",
-	"conflict.failed": "Не ўдалося разабраць канфлікт: {message}"
+	"conflict.failed": "Не ўдалося разабраць канфлікт: {message}",
+	"conflict.take_change": "Прыняць змяненне",
+	"conflict.reject_change": "Адхіліць змяненне",
+	"conflict.apply_choices": "Ужыць выбар ({count})",
+	"conflict.hunk_title": "Змяненне {number} з {total}",
+	"conflict.hunk_hint": "Для кожнага змянення: прыміце яго, каб узяць радкі з копіі канфлікту, або адхіліце, каб пакінуць радкі арыгінала. Змяненні без рашэння застаюцца ў нататцы паміж маркерамі канфлікту."
 }

@@ -4,9 +4,8 @@ import {
 	combineWithMarkers,
 	findMarkerBlocks,
 	originalOfConflictCopy,
-	parseMarkerLine,
 } from "../src/conflicts/conflict-merge";
-import { splitLines } from "../src/snapshots/line-diff";
+import { normalizeText, pickSide, randomSource } from "./helpers/markers";
 
 const HASH = "a".repeat(64);
 const LABELS = { original: "original", copy: "copy" };
@@ -26,25 +25,6 @@ test("conflict copy names map back to their original path", () => {
 		assert.equal(originalOfConflictCopy(path), original, path);
 	}
 });
-
-/** Keep one side of every marker block. */
-function pick(text: string, side: "original" | "copy"): string {
-	const out: string[] = [];
-	let part: "none" | "original" | "copy" = "none";
-	for (const line of splitLines(text)) {
-		const kind = parseMarkerLine(line)?.kind;
-		if (kind === "start") {
-			part = "original";
-		} else if (part !== "none" && kind === "middle") {
-			part = "copy";
-		} else if (part !== "none" && kind === "end") {
-			part = "none";
-		} else if (part === "none" || part === side) {
-			out.push(line);
-		}
-	}
-	return out.length === 0 ? "" : out.join("\n") + "\n";
-}
 
 test("combining writes one marker block per differing region", () => {
 	const merged = combineWithMarkers(
@@ -75,11 +55,7 @@ test("combining writes one marker block per differing region", () => {
 });
 
 test("choosing one side of every block restores that version exactly", () => {
-	let seed = 7;
-	const random = (n: number) => {
-		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-		return seed % n;
-	};
+	const random = randomSource(7);
 	const text = () =>
 		Array.from({ length: random(12) }, () => `line ${random(6)}`).join(
 			"\n",
@@ -88,12 +64,12 @@ test("choosing one side of every block restores that version exactly", () => {
 		const original = text();
 		const copy = text();
 		const merged = combineWithMarkers(original, copy, LABELS);
-		const normalize = (value: string) =>
-			splitLines(value).length === 0
-				? ""
-				: splitLines(value).join("\n") + "\n";
-		assert.equal(pick(merged, "original"), normalize(original), merged);
-		assert.equal(pick(merged, "copy"), normalize(copy), merged);
+		assert.equal(
+			pickSide(merged, "original"),
+			normalizeText(original),
+			merged,
+		);
+		assert.equal(pickSide(merged, "copy"), normalizeText(copy), merged);
 	}
 });
 
