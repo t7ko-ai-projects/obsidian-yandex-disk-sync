@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.2.1
+
+### Fixed
+
+- The encryption toggle now says when it is refused because another operation
+  is running, instead of doing nothing, and logs each step of the enable flow
+  (click, manifest check, dialogs) at info level.
+
 ## 2.2.0
 
 Fork release (plugin id `t7-yandex-disk-sync`).

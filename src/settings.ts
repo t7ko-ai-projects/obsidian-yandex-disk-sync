@@ -317,9 +317,18 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 		isCurrent: () => boolean,
 	): Promise<void> {
 		let remoteManifest: RemoteEncryptionManifest | null = null;
+		logger.info("Enable encryption: checking the remote manifest");
 		try {
 			remoteManifest = await this.plugin.getRemoteEncryptionManifest();
+			logger.info("Enable encryption: remote manifest checked", {
+				found: remoteManifest !== null,
+				current: isCurrent(),
+			});
 		} catch (error) {
+			logger.warn("Enable encryption: remote manifest check failed", {
+				error,
+				current: isCurrent(),
+			});
 			if (!isCurrent()) {
 				return;
 			}
@@ -337,11 +346,15 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 		}
 
 		if (!isCurrent()) {
+			logger.info("Enable encryption stopped: settings context changed");
 			return;
 		}
 		if (remoteManifest) {
 			const password = await this.promptConnectEncryptionPassword();
 			if (!password || !isCurrent()) {
+				logger.info("Enable encryption stopped after connect dialog", {
+					passwordGiven: Boolean(password),
+				});
 				return;
 			}
 
@@ -358,6 +371,9 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 
 		const password = await this.promptNewEncryptionPassword();
 		if (!password || !isCurrent()) {
+			logger.info("Enable encryption stopped after password dialog", {
+				passwordGiven: Boolean(password),
+			});
 			return;
 		}
 
@@ -963,7 +979,16 @@ export class YandexDiskSyncSettingTab extends PluginSettingTab {
 					.then((control) => this.trackControl(control))
 					.onChange(async (value) => {
 						toggle.setValue(this.plugin.settings.enableEncryption);
+						logger.info("Encryption toggle clicked", {
+							requested: value,
+							enabled: this.plugin.settings.enableEncryption,
+							pendingAction: this.pendingAction,
+							configurationBusy:
+								this.plugin.isConfigurationBusy(),
+							unloaded: this.plugin.isPluginUnloaded(),
+						});
 						if (this.isActionUnavailable()) {
+							new Notice(t("notice.configuration_busy"));
 							return;
 						}
 						await this.runSettingsAction(async (isCurrent) => {
