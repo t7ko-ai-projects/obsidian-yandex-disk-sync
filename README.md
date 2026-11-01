@@ -163,8 +163,10 @@ See [encryption documentation](docs/E2E_ENCRYPTION.md).
 
 ## Security and limitations
 
-- The OAuth token and encryption password are stored in plaintext in local plugin
-  data. Do not share that directory or diagnostics containing secrets.
+- The OAuth token and encryption password are kept in Obsidian's secret storage
+  (Obsidian 1.11.4 or newer) and are not written to the plugin's `data.json`.
+  Secrets are not synchronized between devices: enter them on each device.
+  Do not share diagnostics that contain secrets.
 - The plugin sends synchronized data to Yandex Disk and collects no telemetry.
   The encryption password is never sent to Yandex Disk.
 - Removing plugin data does not revoke the OAuth token; revoke unused tokens

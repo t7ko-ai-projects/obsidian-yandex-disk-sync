@@ -14,7 +14,7 @@ import { createSafeRecord } from "./utils/record-utils";
 export interface YandexDiskSyncSettings {
 	/** Local interface override; system follows Obsidian language. */
 	language: LanguagePreference;
-	/** OAuth token stored only in local plugin data */
+	/** OAuth token; kept in Obsidian's secret storage, not in data.json */
 	yandexTokenSecret: string;
 	/** Require an explicit full sync before automation can use this connection. */
 	manualSyncRequired: boolean;
@@ -49,9 +49,9 @@ export interface YandexDiskSyncSettings {
 	/** Base64-encoded salt for key derivation (null = not initialized) */
 	encryptionSalt: string | null;
 	/**
-	 * User-provided encryption password stored locally as a plaintext string.
-	 * This field is intentionally not encrypted because Obsidian mobile plugins
-	 * do not have access to the OS keychain. Keep it inside plugin sandbox data.
+	 * User-provided encryption password. In memory it lives here; on disk it is
+	 * kept in Obsidian's secret storage and removed from data.json (see
+	 * secret-persistence.ts).
 	 */
 	encryptionPassword: string | null;
 	/** Remote encryption manifest revision applied on this device */

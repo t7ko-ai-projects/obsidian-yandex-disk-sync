@@ -54,6 +54,11 @@ import {
 import { PLUGIN_DATA_FORMAT } from "./plugin-data-loader";
 import { PluginPersistence, type PluginData } from "./plugin-persistence";
 import {
+	restoreSecrets,
+	SecretWriter,
+	type SecretVault,
+} from "./secret-persistence";
+import {
 	PluginStartup,
 	type StartupBlockKind,
 	type StartupState,
@@ -145,8 +150,9 @@ export default class YandexDiskSyncPlugin extends Plugin {
 	private connectionGeneration = 0;
 	private operationIssue?: { code: string; message: string };
 	private readonly persistence = new PluginPersistence({
-		read: () => this.loadData(),
-		save: (data) => this.saveData(data),
+		read: async () =>
+			restoreSecrets(await this.loadData(), this.secretVault()),
+		save: (data) => this.saveData(this.secretWriter().strip(data)),
 		snapshot: () => this.buildPluginData(),
 		publish: (patch) => {
 			this.settings = prepareSettingsPatch(this.settings, patch).settings;
@@ -2127,6 +2133,19 @@ export default class YandexDiskSyncPlugin extends Plugin {
 	/** Suppress presentation after the plugin lifecycle has ended. */
 	isPluginUnloaded(): boolean {
 		return this.unloaded;
+	}
+
+	private secretWriterInstance: SecretWriter | null = null;
+
+	/** Obsidian's secret storage, absent before Obsidian 1.11.4. */
+	private secretVault(): SecretVault | null {
+		const vault = this.app.secretStorage as SecretVault | undefined;
+		return vault ?? null;
+	}
+
+	private secretWriter(): SecretWriter {
+		this.secretWriterInstance ??= new SecretWriter(this.secretVault());
+		return this.secretWriterInstance;
 	}
 
 	/** Save user drafts through the same persistence owner as internal transitions. */

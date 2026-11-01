@@ -116,8 +116,10 @@
   start automatic recovery under a new configuration. See docs/E2E_ENCRYPTION.md.
 - `clearIndexTransitionServices()` must run through `finally` around physical
   re-encoding.
-- Passwords and OAuth tokens stay only in local plugin data. Never put them in
-  logs, the canonical index, the manifest, or synchronized user files.
+- Passwords and OAuth tokens stay on the device: in memory and in Obsidian's
+  secret storage (`src/secret-persistence.ts` moves them out of `data.json` on
+  save and back on load). Never put them in logs, the canonical index, the
+  manifest, or synchronized user files.
 
 ## Compatibility and versioning
 

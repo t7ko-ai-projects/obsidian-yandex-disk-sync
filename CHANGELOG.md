@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.3.0
+
+### Changed
+
+- The OAuth token and the encryption passwords (including those of an
+  unfinished encryption transition) are kept in Obsidian's secret storage and
+  no longer written to `data.json`. Existing plaintext values are moved on the
+  first save after the update; a value stays in `data.json` if the secret
+  storage cannot read it back. Secrets are not synchronized between devices.
+- Requires Obsidian 1.11.4 or newer.
+
 ## 2.2.2
 
 ### Fixed
