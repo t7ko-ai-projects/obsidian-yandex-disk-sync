@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.5.5
+
+### Changed
+
+- Download timeout now scales with file size (60 s plus the time at 20 KB/s, at most
+  15 min), so large files on slow mobile networks are no longer cut off.
+- When recent downloads predict a file cannot finish within 15 min, it is skipped
+  at once and retried on a later sync instead of waiting for a timeout.
+
 ## 2.5.4
 
 ### Changed

@@ -14,7 +14,12 @@ import type { EncryptionCodec } from "../crypto/encryption";
 import { countApiResponse } from "../utils/api-request-counter";
 import { logger } from "../utils/logger";
 import {
+	scaledTransferTimeoutMs,
+	ThroughputTracker,
+} from "../utils/transfer-timeout";
+import {
 	YandexApiError,
+	RemoteTransferDeferredError,
 	RemoteHttpError,
 	RemoteReadTimeoutError,
 	RemoteReadInterruptedError,
@@ -93,6 +98,7 @@ export class YandexDiskClient {
 	private readonly apiReadAttemptTimeoutMs: number;
 	private readonly readTransport: RemoteReadTransport;
 	private readonly rateLimiter: RequestRateLimiter;
+	private readonly downloadThroughput = new ThroughputTracker();
 	private readLifetime = new AbortController();
 	private readsStopped = false;
 	private folderCache: Set<string> = new Set();
@@ -357,6 +363,7 @@ export class YandexDiskClient {
 			);
 		}
 
+		this.extendBudgetForTransfer(budget, before.size);
 		const raw = await this.downloadFile(path, true, budget);
 		const after = await this.getResource(path, 1, 0, true, budget);
 		if (!after) {
@@ -402,6 +409,7 @@ export class YandexDiskClient {
 			return null;
 		}
 		const rawPath = await this.encryptFilePath(path);
+		this.extendBudgetForTransfer(budget, before.size);
 		const raw = await this.downloadFile(rawPath, true, budget);
 		const after = await this.getLogicalResource(path, budget);
 		if (!after) {
@@ -1500,7 +1508,8 @@ export class YandexDiskClient {
 						attempt: attempt + 1,
 					},
 					this.bindReadBudget(budget),
-					this.readTimeoutMs,
+					this.readTimeoutMs +
+						Math.max(0, budget.timeoutMs - this.downloadTimeoutMs),
 				);
 			} catch (error) {
 				logger.warn("Download transfer failed", {
@@ -1535,6 +1544,10 @@ export class YandexDiskClient {
 					});
 					this.transportMetrics.downloadBytes +=
 						response.arrayBuffer.byteLength;
+					this.downloadThroughput.record(
+						response.arrayBuffer.byteLength,
+						Date.now() - startedAt,
+					);
 					const result = raw
 						? response.arrayBuffer
 						: await this.decryptContent(response.arrayBuffer);
@@ -2006,6 +2019,34 @@ export class YandexDiskClient {
 			timeoutMs: this.downloadTimeoutMs,
 			signal: this.readLifetime.signal,
 		};
+	}
+
+	/**
+	 * Give a read budget enough time for a file of known size, so a slow link
+	 * does not time out a transfer that is still progressing. When recent
+	 * transfers predict the file cannot finish within the ceiling, skip it now;
+	 * a later sync measures again.
+	 */
+	private extendBudgetForTransfer(
+		budget: DownloadReadBudget,
+		sizeBytes: number | undefined,
+	): void {
+		if (sizeBytes && this.downloadThroughput.isTooSlow(sizeBytes)) {
+			const estimate = this.downloadThroughput.predictMs(sizeBytes) ?? 0;
+			logger.warn("Download deferred: measured throughput too low", {
+				size: sizeBytes,
+				estimatedMs: Math.round(estimate),
+			});
+			throw new RemoteTransferDeferredError(estimate);
+		}
+		const timeoutMs = scaledTransferTimeoutMs(
+			this.downloadTimeoutMs,
+			sizeBytes,
+		);
+		if (timeoutMs > budget.timeoutMs) {
+			budget.timeoutMs = timeoutMs;
+			budget.deadline = Math.max(budget.deadline, Date.now() + timeoutMs);
+		}
 	}
 
 	private bindReadBudget(

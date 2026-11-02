@@ -87,6 +87,18 @@ export class RemoteReadTimeoutError extends Error {
 }
 
 /**
+ * A transfer was skipped because the measured throughput predicts it cannot
+ * finish within the transfer ceiling. A later sync measures again and retries.
+ */
+export class RemoteTransferDeferredError extends RemoteReadTimeoutError {
+	constructor(estimatedMs: number) {
+		super(0, "download deferred", "not-started");
+		this.message = `Network too slow for this file (estimated ${Math.round(estimatedMs / 1000)}s); it will be retried on a later sync`;
+		this.name = "RemoteTransferDeferredError";
+	}
+}
+
+/**
  * A service file (canonical index, lock, manifest) vanished between the
  * download and its verifying metadata read. Another device is usually
  * mid-commit, so a fresh session normally succeeds.
