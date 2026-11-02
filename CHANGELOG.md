@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.5.3
+
+### Added
+
+- Cheap remote-change poll: every `remotePollSeconds` (default 30, 0 = off) the
+  plugin makes one metadata request on the canonical index and starts a normal
+  sync when another device changed it, so remote edits appear sooner than the
+  sync interval.
+- Request rate limiter: `maxRequestsPerSecond` (default 8, 0 = unlimited) spaces
+  all Yandex API calls. Both settings live in the plugin data, not the settings tab.
+
+### Changed
+
+- An ordinary full sync no longer makes a separate remote-folder check when the
+  index load already lists that folder (one API call fewer per sync).
+
 ## 2.5.2
 
 ### Added
