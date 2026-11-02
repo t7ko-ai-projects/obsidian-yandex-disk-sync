@@ -2441,6 +2441,20 @@ export class IndexManager {
 	}
 
 	/**
+	 * Observe the canonical index's content fingerprint with one metadata
+	 * request. It authorizes nothing: a missing or locked index reads as null.
+	 */
+	async peekCanonicalFingerprint(): Promise<string | null> {
+		const resource = await this.yandexClient.getResource(
+			this.getRemoteIndexPath(),
+			1,
+			0,
+			true,
+		);
+		return this.yandexClient.getContentFingerprint(resource);
+	}
+
+	/**
 	 * Check if remote folder exists
 	 */
 	async remotePathExists(): Promise<boolean> {

@@ -274,9 +274,14 @@ async function loadFullCanonical(
 	validationToken?: string,
 ): Promise<boolean> {
 	deps.yandexClient.clearFolderCache();
-	// 1. Ensure remote folder exists
+	// 1. Ensure remote folder exists; a read session's stable-root discovery
+	// already creates a missing folder, so it needs no separate check.
 	deps.setSyncPhase("checking-remote");
-	if (!options?.startup && !(await deps.indexManager.remotePathExists())) {
+	if (
+		!options?.startup &&
+		!deps.canonicalReadSession &&
+		!(await deps.indexManager.remotePathExists())
+	) {
 		await deps.indexManager.createRemotePath();
 	}
 

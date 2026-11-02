@@ -325,6 +325,7 @@ export default class YandexDiskSyncPlugin extends Plugin {
 		this.yandexClient = new YandexDiskClient({
 			token: this.settings.yandexTokenSecret,
 			maxConcurrency: this.settings.maxConcurrency,
+			maxRequestsPerSecond: this.settings.maxRequestsPerSecond,
 		});
 		this.yandexClient.setRemotePath(this.settings.remotePath);
 		this.configuredToken = this.settings.yandexTokenSecret;
@@ -572,6 +573,9 @@ export default class YandexDiskSyncPlugin extends Plugin {
 
 		// Create sync scheduler
 		this.syncScheduler = new SyncScheduler(this.syncEngine, this.settings);
+		this.syncScheduler.setRemoteProbe(() =>
+			this.indexManager.peekCanonicalFingerprint(),
+		);
 
 		// Create backup manager
 		this.backupManager = new BackupManager(
@@ -2398,6 +2402,9 @@ export default class YandexDiskSyncPlugin extends Plugin {
 		// Update components
 		if (this.yandexClient) {
 			this.yandexClient.setReadConcurrency(this.settings.maxConcurrency);
+			this.yandexClient.setRequestRate(
+				this.settings.maxRequestsPerSecond,
+			);
 			this.yandexClient.setToken(this.settings.yandexTokenSecret);
 			this.yandexClient.setRemotePath(this.settings.remotePath);
 		}

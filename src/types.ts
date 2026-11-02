@@ -38,6 +38,10 @@ export interface YandexDiskSyncSettings {
 	debounceDelay: number;
 	/** Maximum number of concurrent operations during sync */
 	maxConcurrency: number;
+	/** Upper bound on Yandex API calls per second for this device (0 = unlimited) */
+	maxRequestsPerSecond: number;
+	/** Seconds between cheap checks for remote changes (0 = rely on the sync interval) */
+	remotePollSeconds: number;
 	/** Enable debug logging (verbose output) */
 	enableDebugLogging: boolean;
 	/** Write logs to a file in the vault for debugging */
@@ -74,6 +78,8 @@ export const DEFAULT_SETTINGS: YandexDiskSyncSettings = {
 	deviceId: "",
 	debounceDelay: 1000,
 	maxConcurrency: 20,
+	maxRequestsPerSecond: 8,
+	remotePollSeconds: 30,
 	enableDebugLogging: false,
 	logToFile: true,
 	enableDailySnapshots: false,

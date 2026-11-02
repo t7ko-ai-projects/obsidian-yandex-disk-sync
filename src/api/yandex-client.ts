@@ -38,6 +38,7 @@ import {
 	joinPath,
 	toLocalPath,
 } from "../utils/path-utils";
+import { RequestRateLimiter } from "../utils/rate-limiter";
 import { runWithConcurrencySettled } from "../utils/semaphore";
 import { computeSha256 } from "../utils/hash-utils";
 import { RemoteReadTransport, type RemoteReadBudget } from "./read-transport";
@@ -56,6 +57,7 @@ export interface YandexClientConfig {
 	downloadTimeoutMs?: number;
 	apiReadAttemptTimeoutMs?: number;
 	maxConcurrency?: number;
+	maxRequestsPerSecond?: number;
 }
 
 type DownloadReadBudget = RemoteReadBudget;
@@ -89,6 +91,7 @@ export class YandexDiskClient {
 	private readonly downloadTimeoutMs: number;
 	private readonly apiReadAttemptTimeoutMs: number;
 	private readonly readTransport: RemoteReadTransport;
+	private readonly rateLimiter: RequestRateLimiter;
 	private readLifetime = new AbortController();
 	private readsStopped = false;
 	private folderCache: Set<string> = new Set();
@@ -204,6 +207,14 @@ export class YandexDiskClient {
 			(params) => this.requestNative(params),
 			config.maxConcurrency ?? 20,
 		);
+		this.rateLimiter = new RequestRateLimiter(
+			config.maxRequestsPerSecond ?? 0,
+		);
+	}
+
+	/** Cap Yandex API calls per second across all operations (0 = unlimited). */
+	setRequestRate(requestsPerSecond: number): void {
+		this.rateLimiter.setRate(requestsPerSecond);
 	}
 
 	/** Keep the native read ceiling aligned with the existing runtime setting. */
@@ -1763,6 +1774,7 @@ export class YandexDiskClient {
 			const startedAt = Date.now();
 			try {
 				this.remainingReadTime(budget, `API ${method} ${endpointName}`);
+				await this.rateLimiter.acquire(budget?.signal);
 				logger.debug(`API request: ${method} ${endpointName}`, {
 					attempt: attempt + 1,
 					maxRetries: this.maxRetries,
