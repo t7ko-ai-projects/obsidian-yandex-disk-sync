@@ -1,6 +1,6 @@
 {
 	"name": "yandex-disk-sync",
-	"version": "2.5.1",
+	"version": "2.5.2",
 	"description": "Sync Obsidian vault with Yandex Disk",
 	"main": "main.js",
 	"type": "module",

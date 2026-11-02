@@ -11,6 +11,7 @@ import type {
 	YandexError,
 } from "../types";
 import type { EncryptionCodec } from "../crypto/encryption";
+import { countApiResponse } from "../utils/api-request-counter";
 import { logger } from "../utils/logger";
 import {
 	YandexApiError,
@@ -1789,8 +1790,13 @@ export class YandexDiskClient {
 
 				// Successful statuses
 				if (response.status >= 200 && response.status < 300) {
+					countApiResponse();
 					logger.debug(
 						`API response: ${method} ${endpointName} -> ${response.status}`,
+						{
+							durationMs: Date.now() - startedAt,
+							attempt: attempt + 1,
+						},
 					);
 					return response;
 				}

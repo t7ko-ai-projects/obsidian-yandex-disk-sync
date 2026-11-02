@@ -13,6 +13,7 @@ import type {
 	YandexDiskSyncSettings,
 } from "../types";
 import { INITIAL_SYNC_STATE } from "../types";
+import { apiResponseCount } from "../utils/api-request-counter";
 import { logger, shortenDiagnosticValue } from "../utils/logger";
 import {
 	IndexManager,
@@ -80,6 +81,11 @@ export type {
 } from "./contracts";
 export class SyncEngine {
 	private yandexClient: YandexDiskClient;
+	private phaseTiming: {
+		phase: SyncPhase;
+		startedAt: number;
+		requests: number;
+	} | null = null;
 	private vaultAdapter: VaultAdapter;
 	private indexManager: IndexManager;
 	private conflictResolver: ConflictResolver;
@@ -496,6 +502,7 @@ export class SyncEngine {
 		currentOperation = this.getPhaseLabel(phase),
 		progress?: SyncProgress,
 	): void {
+		this.logPhaseTiming(phase);
 		this.updateState({
 			phase,
 			currentOperation,
@@ -509,6 +516,26 @@ export class SyncEngine {
 							total: progress.total,
 						}
 					: undefined,
+		});
+	}
+
+	/** Log how long the previous phase took and how many API calls it made. */
+	private logPhaseTiming(next: SyncPhase): void {
+		const now = Date.now();
+		const requests = apiResponseCount();
+		const previous = this.phaseTiming;
+		if (previous?.phase === next) {
+			return;
+		}
+		this.phaseTiming = { phase: next, startedAt: now, requests };
+		if (!previous) {
+			return;
+		}
+		logger.info("Sync phase finished", {
+			phase: previous.phase,
+			durationMs: now - previous.startedAt,
+			apiCalls: requests - previous.requests,
+			next,
 		});
 	}
 

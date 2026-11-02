@@ -1228,8 +1228,11 @@ export class IndexManager {
 	 */
 	async buildLocalIndex(): Promise<Map<string, FileMetadata>> {
 		logger.info("Building local index...");
+		const startedAt = Date.now();
 		const metadata = await this.vaultAdapter.getAllFileMetadata(true);
-		logger.info(`Found ${metadata.size} files for synchronization`);
+		logger.info(`Found ${metadata.size} files for synchronization`, {
+			durationMs: Date.now() - startedAt,
+		});
 		return metadata;
 	}
 

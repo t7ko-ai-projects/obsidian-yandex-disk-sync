@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.2
+
+### Added
+
+- Debug log timing for each sync: every phase logs its duration and the number of
+  API calls it made, each API response logs its duration, and the local scan
+  logs its duration. Used to find where a sync spends its time.
+
 ## 2.5.1
 
 ### Fixed
