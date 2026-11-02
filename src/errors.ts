@@ -86,6 +86,18 @@ export class RemoteReadTimeoutError extends Error {
 	}
 }
 
+/**
+ * A service file (canonical index, lock, manifest) vanished between the
+ * download and its verifying metadata read. Another device is usually
+ * mid-commit, so a fresh session normally succeeds.
+ */
+export class RemoteServiceFileDisappearedError extends Error {
+	constructor() {
+		super("Remote service file disappeared while being read");
+		this.name = "RemoteServiceFileDisappearedError";
+	}
+}
+
 /** Revocation is an admission failure, never a retryable native rejection. */
 export class RemoteReadInterruptedError extends Error {
 	constructor() {

@@ -8,6 +8,8 @@ import {
 	RemoteIndexRolledBackError,
 	type IndexManager,
 } from "../src/sync/canonical/manager";
+import { RemoteServiceFileDisappearedError } from "../src/errors";
+import { RemoteIndexConcurrentModificationError } from "../src/sync/canonical/errors";
 import { SyncEngine } from "../src/sync/engine";
 import { classifySyncError } from "../src/sync/errors";
 import { logger } from "../src/utils/logger";
@@ -547,4 +549,33 @@ test("failed epoch rebase save retains late watcher identity across restart with
 	assert.equal((await restarted.engine.fullSync()).success, true);
 	assert.deepEqual(restarted.watcher.getDeferredEvents(), []);
 	assert.equal(restarted.index.remoteSaveCount, 0);
+});
+
+test("full sync repeats a race with another device's commit and then reports a persistent one", async () => {
+	const races = [
+		() => new RemoteServiceFileDisappearedError(),
+		() => new RemoteIndexConcurrentModificationError("index changed"),
+	];
+	for (const makeRace of races) {
+		for (const failures of [1, 3]) {
+			const { engine, index } = createHarness(false);
+			engine.raceRetryDelayMs = 1;
+			engine.setSyncGuardCallback((token) => ({
+				blockReason: null,
+				validationToken: token ?? "manifest-v1",
+			}));
+			let loads = 0;
+			const load = index.loadRemoteIndex.bind(index);
+			index.loadRemoteIndex = async () => {
+				if (++loads <= failures) {
+					throw makeRace();
+				}
+				return await load();
+			};
+			const result = await engine.fullSync();
+			const label = `${makeRace().name} x${failures}`;
+			assert.equal(result.success, failures === 1, label);
+			assert.equal(loads, failures === 1 ? 2 : 3, label);
+		}
+	}
 });

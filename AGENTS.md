@@ -2,7 +2,8 @@
 
 ## Communication and code quality
 
-- Always communicate with the user in Russian.
+- Always communicate with the user in English (user's rule, 2026-11-02; it replaced the
+  earlier Russian rule).
 - Keep this file and every future update to it in English. It is loaded in
   every session, so concise English instructions reduce token usage.
 - Read the applicable files in `docs/` before making changes. The normative

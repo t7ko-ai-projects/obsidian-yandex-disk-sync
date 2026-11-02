@@ -6,6 +6,7 @@ import {
 import {
 	OperationFailure,
 	RemoteReadInterruptedError,
+	RemoteServiceFileDisappearedError,
 	type FailureContext,
 	type FailureSummary,
 } from "../errors";
@@ -173,6 +174,15 @@ function classifyDomainError(error: Error): string | undefined {
 		)
 	) {
 		return "sync-interrupted";
+	}
+	if (
+		findErrorCause(
+			error,
+			(candidate) =>
+				candidate instanceof RemoteServiceFileDisappearedError,
+		)
+	) {
+		return "service-file-disappeared";
 	}
 	if (
 		findErrorCause(
@@ -349,6 +359,25 @@ function classifyDomainError(error: Error): string | undefined {
 			candidate.summary.category === "safety",
 	);
 	return inherited?.summary.code;
+}
+
+const TRANSIENT_RACE_CODES = new Set([
+	"canonical-concurrent",
+	"service-file-disappeared",
+]);
+
+/**
+ * True when every error is a race with another device's index commit. A fresh
+ * session re-reads canonical, so repeating the run is safe.
+ */
+export function isTransientRaceResult(result: SyncResult): boolean {
+	return (
+		!result.success &&
+		result.errors.length > 0 &&
+		result.errors.every(
+			(error) => !!error.code && TRANSIENT_RACE_CODES.has(error.code),
+		)
+	);
 }
 
 /** Publish a coherent first failure and partial outcome after all started work settles. */

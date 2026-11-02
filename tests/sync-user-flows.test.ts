@@ -715,6 +715,7 @@ test("ordinary reception preserves partial baselines on final drift and rejects 
 					}
 				});
 			}
+			phone.engine.raceRetries = 0;
 			const failed = await phone.engine.fullSync();
 			assert.equal(injected, true);
 			assert.equal(failed.success, false);

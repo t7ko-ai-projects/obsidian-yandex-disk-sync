@@ -819,3 +819,12 @@ manual-required: edit/rename на mobile Obsidian с реальным Yandex Dis
 `rate limiter spaces queued calls, honors abort and can be disabled`;
 manual-required: два устройства с реальным Yandex Disk (правка на одном видна на другом
 раньше sync interval), массовая загрузка, удаление remote-папки перед sync.
+
+## Повтор full sync при гонке с коммитом другого устройства
+
+| ID       | Приоритет | Сценарий                                                                                                                                                | Ожидаемый canonical/local/physical результат                                                                                                                                                                                  |
+| -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RACE-001 | P1        | Full sync завершился только ошибками `canonical-concurrent` или `service-file-disappeared` (другое устройство коммитит индекс, canonical на миг в lock) | Engine до двух раз повторяет full с паузой 3 s и 6 s, каждый раз с новым чтением canonical; ошибка показывается, только если гонка не прошла. Startup read session и Force не повторяются. Любая другая ошибка не повторяется |
+
+Проверка: auto: `full sync repeats a race with another device's commit and then reports a persistent one`;
+manual-required: два устройства с реальным Yandex Disk, sync на одном во время commit на другом.

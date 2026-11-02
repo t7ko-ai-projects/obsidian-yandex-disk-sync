@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.5.4
+
+### Changed
+
+- A full sync that fails only because another device was committing the index
+  (`canonical-concurrent`, or a service file vanishing between download and check)
+  is now repeated up to twice from a fresh read before an error is shown.
+
 ## 2.5.3
 
 ### Added

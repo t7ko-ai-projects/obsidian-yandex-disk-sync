@@ -80,6 +80,10 @@ export type {
 	SyncRunOptions,
 } from "./contracts";
 export class SyncEngine {
+	/** Extra full-sync attempts after a race with another device's index commit. */
+	raceRetries = 2;
+	/** Base pause before a race retry; the nth retry waits n times this. */
+	raceRetryDelayMs = 3000;
 	private yandexClient: YandexDiskClient;
 	private phaseTiming: {
 		phase: SyncPhase;
@@ -690,9 +694,46 @@ export class SyncEngine {
 	}
 
 	/**
-	 * Perform full synchronization
+	 * Perform full synchronization. A run that fails only because another device
+	 * was committing the index is repeated from a fresh read before reporting.
+	 * Startup read sessions and Force runs are never repeated.
 	 */
 	async fullSync(
+		options?: SyncRunOptions,
+		startupReads?: StartupReadSession,
+	): Promise<SyncResult> {
+		let result = await this.fullSyncAttempt(options, startupReads);
+		const repeatable = !startupReads && !options?.forceReplacement;
+		for (
+			let retry = 1;
+			repeatable &&
+			retry <= this.raceRetries &&
+			syncErrors.isTransientRaceResult(result) &&
+			!this.isStopped() &&
+			!this.isPaused;
+			retry++
+		) {
+			logger.info(
+				"Repeating full sync after a race with another device",
+				{
+					retry,
+					code: result.errors[0]?.code,
+				},
+			);
+			this.updateState({
+				status: "syncing",
+				failure: undefined,
+				errorMessage: undefined,
+			});
+			await new Promise((resolve) =>
+				setTimeout(resolve, this.raceRetryDelayMs * retry),
+			);
+			result = await this.fullSyncAttempt(options);
+		}
+		return result;
+	}
+
+	private async fullSyncAttempt(
 		options?: SyncRunOptions,
 		startupReads?: StartupReadSession,
 	): Promise<SyncResult> {

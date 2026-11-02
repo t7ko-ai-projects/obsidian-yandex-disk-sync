@@ -18,6 +18,7 @@ import {
 	RemoteHttpError,
 	RemoteReadTimeoutError,
 	RemoteReadInterruptedError,
+	RemoteServiceFileDisappearedError,
 	NetworkRequestError,
 	OperationFailure,
 	decideRecovery,
@@ -359,7 +360,7 @@ export class YandexDiskClient {
 		const raw = await this.downloadFile(path, true, budget);
 		const after = await this.getResource(path, 1, 0, true, budget);
 		if (!after) {
-			throw new Error("Remote service file disappeared while being read");
+			throw new RemoteServiceFileDisappearedError();
 		}
 		const matchingFingerprint = this.getMatchingContentFingerprint(
 			before,
