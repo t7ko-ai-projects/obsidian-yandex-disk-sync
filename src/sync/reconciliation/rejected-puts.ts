@@ -1,7 +1,9 @@
+import { originalOfConflictCopy } from "../../conflicts/conflict-merge";
 import { computeSha256 } from "../../utils/hash-utils";
 import { logger } from "../../utils/logger";
 import { joinPath } from "../../utils/path-utils";
 import { matchesPhysicalResourceFingerprint } from "../../utils/resource-fingerprint";
+import { shouldBackupLocalDelete } from "../files/action-rules";
 import * as fileOperations from "../files/operations";
 import { saveRemoteIndexBestEffort } from "./commits";
 import {
@@ -36,6 +38,11 @@ export async function cleanupRejectedUploads(
 			continue;
 		}
 		if (deps.vaultAdapter.fileExists(rejected.path)) {
+			await keepEditLostToDelete(
+				deps,
+				rejected.path,
+				rejected.baselineSha256,
+			);
 			deps.indexManager.enqueuePhysicalAction(
 				"delete-local",
 				rejected.path,
@@ -87,15 +94,46 @@ export async function cleanupRejectedUploads(
 	}
 }
 
-/** Preserve the losing side of a concurrent live put as a conflict copy, then restore the canonical winner at the original path. */
-async function preserveRejectedConcurrentPut(
+/**
+ * An exact delete beat this device's edit. Keep the edit as a visible,
+ * synchronized conflict copy next to the deleted path, in addition to the
+ * protective backup the local delete makes. A failure here is not fatal: the
+ * backup still holds the edit. A deleted conflict copy never spawns another one.
+ */
+async function keepEditLostToDelete(
 	deps: Dependencies,
 	path: string,
+	baselineSha256: string | undefined,
 ): Promise<void> {
-	if (!deps.vaultAdapter.fileExists(path)) {
+	if (originalOfConflictCopy(path)) {
 		return;
 	}
-	const localContent = await deps.vaultAdapter.readFile(path);
+	try {
+		if (!deps.vaultAdapter.fileExists(path)) {
+			return;
+		}
+		const content = await deps.vaultAdapter.readFile(path);
+		if (
+			shouldBackupLocalDelete(
+				await computeSha256(content),
+				baselineSha256,
+			)
+		) {
+			await retainConflictCopy(deps, path, content);
+		}
+	} catch (error) {
+		logger.warn(`Could not keep a visible copy of the edit to ${path}:`, {
+			error,
+		});
+	}
+}
+
+/** Write, publish and verify one conflict copy of a local version; returns its path. */
+async function retainConflictCopy(
+	deps: Dependencies,
+	path: string,
+	localContent: ArrayBuffer,
+): Promise<string> {
 	const localSha256 = await computeSha256(localContent);
 	const currentCanonical = await deps.indexManager.readCanonicalIndex();
 	const conflictPath = await preserveLocalConflictCopy(
@@ -117,12 +155,27 @@ async function preserveRejectedConcurrentPut(
 			deps.indexManager.confirmMutation(mutation.id);
 		}
 	}
-
 	await assertRetainedConflictCopy(
 		deps,
 		conflictPath,
 		localSha256,
 		currentCanonical.epoch,
+	);
+	return conflictPath;
+}
+
+/** Preserve the losing side of a concurrent live put as a conflict copy, then restore the canonical winner at the original path. */
+async function preserveRejectedConcurrentPut(
+	deps: Dependencies,
+	path: string,
+): Promise<void> {
+	if (!deps.vaultAdapter.fileExists(path)) {
+		return;
+	}
+	await retainConflictCopy(
+		deps,
+		path,
+		await deps.vaultAdapter.readFile(path),
 	);
 	const canonical = await deps.indexManager.readCanonicalIndex();
 	const winner = canonical.files[path];

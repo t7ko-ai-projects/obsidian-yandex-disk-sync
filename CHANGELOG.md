@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.5.6
+
+### Changed
+
+- When an edit made on one device loses to a delete made on another (realtime upload
+  rejected by the delete), the edit is now also kept as a visible `_conflict_` copy that
+  syncs to all devices. The delete still wins and the protective backup is still made.
+  A full sync that meets the same situation is unchanged (backup only).
+
 ## 2.5.5
 
 ### Changed
