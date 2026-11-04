@@ -36,6 +36,7 @@ export class SyncIndicator extends Component {
 	private accessibleStatus = "";
 	private iconEl!: HTMLElement;
 	private textEl!: HTMLElement;
+	private activityEl!: HTMLElement;
 	private detailEl!: HTMLElement;
 	private progressEl!: HTMLElement;
 	private insetProbe!: HTMLElement;
@@ -147,6 +148,9 @@ export class SyncIndicator extends Component {
 		this.progressEl = heading.createSpan({
 			cls: "yandex-sync-indicator-progress",
 		});
+		this.activityEl = content.createDiv({
+			cls: "yandex-sync-indicator-activity",
+		});
 		this.detailEl = content.createDiv({
 			cls: "yandex-sync-indicator-detail",
 		});
@@ -247,7 +251,7 @@ export class SyncIndicator extends Component {
 				fullSyncInProgress || Boolean(connection) || this.syncRequested,
 			),
 		);
-		const { state, text, detail, progress, busy, icon } =
+		const { state, text, detail, activity, progress, busy, icon } =
 			getSyncPresentation(context);
 		this.element.className = `yandex-sync-indicator sync-${state.status}${detail && state.status === "syncing" ? " has-error" : ""}`;
 		this.loaderEl.hidden = !busy;
@@ -262,6 +266,10 @@ export class SyncIndicator extends Component {
 			this.detailEl.setText(detail);
 		}
 		this.detailEl.hidden = !detail;
+		if (this.activityEl.textContent !== activity) {
+			this.activityEl.setText(activity);
+		}
+		this.activityEl.hidden = !activity;
 		this.progressEl.setText(progress);
 		this.progressEl.hidden = !progress;
 		this.accessibleStatus = busy

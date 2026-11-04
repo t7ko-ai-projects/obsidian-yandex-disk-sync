@@ -116,6 +116,8 @@ export interface SyncPresentation {
 	state: SyncState;
 	text: string;
 	detail: string;
+	/** Neutral description of the current step; never styled as an error. */
+	activity: string;
 	progress: string;
 	busy: boolean;
 	icon: string;
@@ -230,7 +232,9 @@ export function getSyncPresentation(
 	if (busy && detail) {
 		icon = "triangle-alert";
 	}
-	return { state, text, detail, progress, busy, icon };
+	const activity =
+		sync.status === "syncing" ? (sync.activityDetail ?? "") : "";
+	return { state, text, detail, activity, progress, busy, icon };
 }
 
 /** Format known progress without inventing totals for preparation phases. */

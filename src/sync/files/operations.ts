@@ -52,6 +52,7 @@ export interface Dependencies {
 		phase: SyncPhase,
 		currentOperation?: string,
 		progress?: SyncProgress,
+		activityDetail?: string,
 	) => void;
 	isPaused: boolean;
 	onOperationError?: (error: SyncError) => void;

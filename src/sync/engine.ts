@@ -505,11 +505,13 @@ export class SyncEngine {
 		phase: SyncPhase,
 		currentOperation = this.getPhaseLabel(phase),
 		progress?: SyncProgress,
+		activityDetail?: string,
 	): void {
 		this.logPhaseTiming(phase);
 		this.updateState({
 			phase,
 			currentOperation,
+			activityDetail,
 			progress:
 				progress && progress.total > 0
 					? {

@@ -258,6 +258,13 @@
 	overflow-wrap: anywhere;
 }
 
+.yandex-sync-indicator-activity {
+	margin-top: 8px;
+	color: var(--text-muted);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
 .yandex-sync-indicator-detail {
 	margin-top: 8px;
 	color: var(--text-muted);

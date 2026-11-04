@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.5.7
+
+### Changed
+
+- The detailed status view now shows a second line during "Cleaning up old data" naming
+  the file being deleted or moved, with a counter, so a long cleanup is no longer opaque.
+
 ## 2.5.6
 
 ### Changed

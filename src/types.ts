@@ -562,6 +562,8 @@ export interface SyncState {
 	progress?: SyncProgress;
 	/** Current operation description */
 	currentOperation?: string;
+	/** What the current operation is doing right now, e.g. the file being deleted. */
+	activityDetail?: string;
 }
 
 export const INITIAL_SYNC_STATE: SyncState = {

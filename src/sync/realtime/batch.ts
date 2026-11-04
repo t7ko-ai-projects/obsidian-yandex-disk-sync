@@ -65,6 +65,7 @@ export interface Dependencies {
 		phase: SyncPhase,
 		currentOperation?: string,
 		progress?: SyncProgress,
+		activityDetail?: string,
 	) => void;
 	vaultAdapter: VaultAdapter;
 	indexSaveCallback: IndexSaveCallback | null;
@@ -650,8 +651,19 @@ async function applyPreparedRealtimeWindow(
 	}
 
 	const deletes = accepted.filter((item) => item.action === "delete");
-	if (deletes.length > 0) {
-		deps.setSyncPhase("cleanup");
+	const [firstDelete] = deletes;
+	if (firstDelete) {
+		deps.setSyncPhase(
+			"cleanup",
+			undefined,
+			undefined,
+			t("status.detail.delete_remote", {
+				path:
+					deletes.length === 1
+						? firstDelete.path
+						: `${firstDelete.path} (+${deletes.length - 1})`,
+			}),
+		);
 	}
 	const deleteResults = await runWithConcurrencySettled(
 		deletes.map((item) => async () => {

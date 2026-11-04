@@ -1,4 +1,5 @@
 import type { FileMetadata, IndexMove, SyncResult } from "../../types";
+import { t } from "../../i18n";
 import { logger } from "../../utils/logger";
 import { runWithConcurrencySettled } from "../../utils/semaphore";
 import * as syncErrors from "../errors";
@@ -57,7 +58,16 @@ export async function resumePendingMoves(
 	let recovered = 0;
 	let unresolved = 0;
 	const completedLocalMutationIds: string[] = [];
-	for (const move of pendingMoves) {
+	for (const [position, move] of pendingMoves.entries()) {
+		deps.fileOperations.setSyncPhase(
+			"cleanup",
+			undefined,
+			{ completed: position, total: pendingMoves.length },
+			t("status.detail.move_remote", {
+				from: move.fromPath,
+				to: move.toPath,
+			}),
+		);
 		try {
 			if (move.kind === "folder") {
 				const folderResult = await resumePendingFolderMove(deps, move);
@@ -268,7 +278,18 @@ export async function resumePendingPhysicalActions(
 				action.type === "delete-local" ||
 				action.type === "delete-remote",
 		);
-	for (const action of actions) {
+	for (const [position, action] of actions.entries()) {
+		deps.fileOperations.setSyncPhase(
+			"cleanup",
+			undefined,
+			{ completed: position, total: actions.length },
+			t(
+				action.type === "delete-local"
+					? "status.detail.delete_local"
+					: "status.detail.delete_remote",
+				{ path: action.path },
+			),
+		);
 		try {
 			if (action.type === "delete-local") {
 				await fileOperations.deleteLocalFile(
